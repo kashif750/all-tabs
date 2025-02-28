@@ -1,0 +1,15 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" fill="#4A90E2"/>
+  
+  <!-- Centered Browser Tabs -->
+  <rect x="65" y="70" width="70" height="20" rx="5" fill="white"/>
+  <rect x="60" y="90" width="80" height="20" rx="5" fill="white"/>
+  <rect x="55" y="110" width="90" height="20" rx="5" fill="white"/>
+  
+  <!-- Central Focus Circle -->
+  <circle cx="100" cy="140" r="12" fill="white"/>
+  
+  <!-- Downward Arrow -->
+  <path d="M100 155 L90 140 H110 Z" fill="white"/>
+</svg>

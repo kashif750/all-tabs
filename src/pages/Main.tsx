@@ -43,10 +43,32 @@ const Main = () => {
     const [formData, setFormData]=useState({
         label: '',
         url: '',
+        favicon: '',
     });
+    console.log('form-data:: ', formData);
     const handleSubmit=()=>{
         setList((prev)=>([...prev, {label: formData?.label || "", to: formData?.url || "", icon: FaFacebook}]));
         setIsOpen(false);
+    }
+    const handleExtractData=()=>{
+            if(!formData?.url){
+                return;
+            }
+            const params = new URLSearchParams();
+            params.append('url', formData.url);
+            fetch(`http://localhost:8080/meta-data?${params}`,{
+                method: 'POST',
+                headers:{
+                    'Content-type':'application/json',
+                }
+            }).then((response)=>response.json())
+            .then((data)=>{
+                console.log('handle-extract-data:: response:: ', data);
+                setFormData((prev)=>({...prev, label: data?.title || "", favicon: data?.favicon || ""}));
+            })
+            .catch((err)=>{
+                console.log('handle-extract-data:: error:: ', err);
+            })
     }
   return (
     <div className="bg-green-500">
@@ -60,9 +82,11 @@ const Main = () => {
             })}
             <button onClick={()=>{setIsOpen(true)}} className="border">Add More</button>
             <div className={twMerge("border hidden", isOpen && "block")}>
-                <input id="label" type='text' placeholder="enter label" className="border" onChange={(e)=>setFormData((prev)=>({...prev, [e.target.id]:e.target.value}))}/>
+                <img src={formData?.favicon} alt="favicon"/>
+                <input id="label" type='text' placeholder="enter label" className="border" value={formData?.label} onChange={(e)=>setFormData((prev)=>({...prev, [e.target.id]:e.target.value}))}/>
                 <input id="url" type="url" placeholder="enter url" className="border" onChange={(e)=>setFormData((prev)=>({...prev, [e.target.id]:e.target.value}))}/>
                 <button type="submit" onClick={handleSubmit} className="border cursor-pointer">Submit</button>
+                <button type="submit" onClick={handleExtractData} className="border cursor-pointer">Extract Data</button>
             </div>
         </div>
     </div>

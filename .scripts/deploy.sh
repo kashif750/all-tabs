@@ -10,7 +10,7 @@ echo "New changes copied to server !"
 echo "Installing Dependencies..."
 npm install --yes
 
-echo "Creating Production Build..."
+echo "Creating AllTabs Production Build..."
 # For ReactJS VueJS and Nuxt JS
 npm run build
 

@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
         with:
@@ -22,4 +23,4 @@ jobs:
           username: ${{ secrets.USERNAME }}
           port: ${{ secrets.PORT }}
           key: ${{ secrets.SSHKEY }}
-          script: "cd /var/www/all-tabs && ./.scripts/deploy.sh"
+          script: "cd /var/www/all-tabs && chmod +x ./.scripts/deploy.sh && ./.scripts/deploy.sh"

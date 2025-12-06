@@ -72,7 +72,7 @@ const Main = () => {
     // }
   return (
     <div className="bg-orange-200">
-        <h1>Office</h1>
+        <h1>Office testing 1</h1>
         <div className="grid grid-cols-3 gap-2">
             {list?.map((itm:any)=>{
                 const Icon = itm?.icon ?? null;

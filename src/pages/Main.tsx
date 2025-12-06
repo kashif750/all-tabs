@@ -71,7 +71,7 @@ const Main = () => {
     //         })
     // }
   return (
-    <div className="bg-yellow-100">
+    <div className="bg-orange-200">
         <h1>Office</h1>
         <div className="grid grid-cols-3 gap-2">
             {list?.map((itm:any)=>{

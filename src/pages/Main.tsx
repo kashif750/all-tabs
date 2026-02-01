@@ -1,96 +1,478 @@
-import { useState } from "react"
-import { BsInstagram } from "react-icons/bs"
-import { FaFacebook, FaJira, FaPlus } from "react-icons/fa"
-import { ImNewTab } from "react-icons/im"
-import { Link } from "react-router"
-import { twMerge } from "tailwind-merge"
+import { useState, useEffect } from "react";
+import { FaPlus, FaSearch, FaBars } from "react-icons/fa";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
-const Data = [
-    {
-        label: 'Facebook',
-        to: 'https://www.facebook.com/',
-        icon: FaFacebook,
-    },
-    {
-        label: 'Facebook',
-        to: 'https://www.facebook.com/',
-        icon: FaJira,
-    },
-    {
-        label: 'Facebook',
-        to: 'https://www.facebook.com/',
-        icon: BsInstagram,
-    },
-    {
-        label: 'Facebook',
-        to: 'https://www.facebook.com/',
-        icon: FaPlus,
-    },
-    {
-        label: 'Facebook',
-        to: 'https://www.facebook.com/',
-        icon: FaPlus,
-    },
-    {
-        label: 'Facebook',
-        to: 'https://www.facebook.com/',
-        icon: FaPlus,
-    },
-]
-const Main = () => {
-    const [list, setList] = useState(Data);
-    const [isOpen, setIsOpen]=useState(false);
-    const [formData, setFormData]=useState({
-        label: '',
-        url: '',
-        favicon: '',
-    });
-    console.log('form-data:: ', formData);
-    const handleSubmit=()=>{
-        setList((prev)=>([...prev, {label: formData?.label || "", to: formData?.url || "", icon: FaFacebook}]));
-        setIsOpen(false);
-    }
-    // const handleExtractData=()=>{
-    //         if(!formData?.url){
-    //             return;
-    //         }
-    //         const params = new URLSearchParams();
-    //         params.append('url', formData.url);
-    //         fetch(`http://localhost:8080/meta-data?${params}`,{
-    //             method: 'POST',
-    //             headers:{
-    //                 'Content-type':'application/json',
-    //             }
-    //         }).then((response)=>response.json())
-    //         .then((data)=>{
-    //             console.log('handle-extract-data:: response:: ', data);
-    //             setFormData((prev)=>({...prev, label: data?.title || "", favicon: data?.favicon || ""}));
-    //         })
-    //         .catch((err)=>{
-    //             console.log('handle-extract-data:: error:: ', err);
-    //         })
-    // }
-  return (
-    <div className="bg-orange-200">
-        <h1>Office</h1>
-        <div className="grid grid-cols-3 gap-2">
-            {list?.map((itm:any)=>{
-                const Icon = itm?.icon ?? null;
-                return(
-                    <Link to={itm?.to || "#"} target="_blank" className="border border-gray-500 flex gap-2 items-center">{Icon ? <Icon/>:null}{itm?.label || ""} <ImNewTab/></Link>
-                )
-            })}
-            <button onClick={()=>{setIsOpen(true)}} className="border">Add More</button>
-            <div className={twMerge("border hidden", isOpen && "block")}>
-                <img src={formData?.favicon} alt="favicon"/>
-                <input id="label" type='text' placeholder="enter label" className="border" value={formData?.label} onChange={(e)=>setFormData((prev)=>({...prev, [e.target.id]:e.target.value}))}/>
-                <input id="url" type="url" placeholder="enter url" className="border" onChange={(e)=>setFormData((prev)=>({...prev, [e.target.id]:e.target.value}))}/>
-                <button type="submit" onClick={handleSubmit} className="border cursor-pointer">Submit</button>
-                {/* <button type="submit" onClick={handleExtractData} className="border cursor-pointer">Extract Data</button> */}
-            </div>
+import BookmarkCard from "../components/BookmarkCard";
+import AddBookmarkModal from "../components/AddBookmarkModal";
+import Sidebar from "../components/Sidebar";
+import ConfirmModal from "../components/ConfirmModal";
+
+// --- Sortable Wrapper ---
+const SortableBookmarkItem = (props: any) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: props.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        touchAction: 'none'
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="h-full">
+            <BookmarkCard {...props} />
         </div>
-    </div>
-  )
+    );
+};
+
+
+const Main = () => {
+    // ---- DATA MIGRATION & INIT ----
+    const [categories, setCategories] = useState<any[]>(() => {
+        const saved = localStorage.getItem('portal_data');
+        let initialData = [];
+        if (saved) {
+            initialData = JSON.parse(saved);
+        } else {
+            // Migration
+            const oldBookmarks = localStorage.getItem('portal_bookmarks');
+            if (oldBookmarks) {
+                const parsedOld = JSON.parse(oldBookmarks);
+                initialData = [{
+                    id: 'default',
+                    name: 'General',
+                    bookmarks: parsedOld,
+                }];
+            } else {
+                // Fresh Start
+                initialData = [{
+                    id: 'default',
+                    name: 'General',
+                    bookmarks: [
+                        {
+                            id: '1',
+                            label: 'Google',
+                            url: 'https://www.google.com',
+                            username: '',
+                            password: '',
+                            isStarred: true,
+                        }
+                    ]
+                }];
+            }
+        }
+
+        if (!initialData.find((c: any) => c.id === 'dashboard')) {
+            initialData.push({
+                id: 'dashboard',
+                name: 'Dashboard',
+                bookmarks: []
+            });
+        }
+        return initialData;
+    });
+
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('dashboard');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [bookmarkToDelete, setBookmarkToDelete] = useState<string | null>(null);
+    const [editingBookmark, setEditingBookmark] = useState<any | null>(null);
+
+    // Sync to local storage
+    useEffect(() => {
+        localStorage.setItem('portal_data', JSON.stringify(categories));
+    }, [categories]);
+
+    // DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Require movement before drag starts
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+
+    // ---- COMPUTED VIEWS ----
+
+    let activeCategoryTitle = "";
+    let activeCategoryBookmarks: any[] = [];
+    let isDashboardView = selectedCategoryId === 'dashboard';
+
+    if (isDashboardView) {
+        activeCategoryTitle = "Dashboard";
+        const dashboardCat = categories.find(c => c.id === 'dashboard');
+        const dashboardItems = dashboardCat ? dashboardCat.bookmarks.map((b: any) => ({ ...b, _categoryId: 'dashboard' })) : [];
+
+        const otherCats = categories.filter(c => c.id !== 'dashboard');
+        const starredItems = otherCats.flatMap(cat =>
+            cat.bookmarks.filter((b: any) => b.isStarred).map((b: any) => ({ ...b, _categoryId: cat.id }))
+        );
+
+        activeCategoryBookmarks = [...dashboardItems, ...starredItems];
+
+    } else {
+        const cat = categories.find(c => c.id === selectedCategoryId);
+        if (cat) {
+            activeCategoryTitle = cat.name;
+            activeCategoryBookmarks = cat.bookmarks.map((b: any) => ({ ...b, _categoryId: cat.id }));
+        } else if (categories.length > 0) {
+            setSelectedCategoryId('dashboard');
+        }
+    }
+
+    // Filter by search
+    let displayedBookmarks = activeCategoryBookmarks.filter((item: any) =>
+        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.url.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // SORTING: 
+    // In Dashboard: Auto-sort (Starred first, A-Z)
+    // In Categories: MANUAL ORDER (DnD, so no auto-sort)
+
+    if (isDashboardView) {
+        displayedBookmarks.sort((a: any, b: any) => {
+            const aImportant = a.isStarred || a._categoryId === 'dashboard';
+            const bImportant = b.isStarred || b._categoryId === 'dashboard';
+            if (aImportant !== bImportant) {
+                return aImportant ? -1 : 1;
+            }
+            return a.label.localeCompare(b.label);
+        });
+    }
+
+    // ---- ACTIONS ----
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (isDashboardView || searchQuery) return;
+
+        if (active.id !== over?.id) {
+            setCategories((prev) => {
+                return prev.map(cat => {
+                    if (cat.id === selectedCategoryId) {
+                        const oldIndex = cat.bookmarks.findIndex((b: any) => b.id === active.id);
+                        const newIndex = cat.bookmarks.findIndex((b: any) => b.id === over?.id);
+
+                        if (oldIndex !== -1 && newIndex !== -1) {
+                            return {
+                                ...cat,
+                                bookmarks: arrayMove(cat.bookmarks, oldIndex, newIndex)
+                            };
+                        }
+                    }
+                    return cat;
+                });
+            });
+        }
+    };
+
+    const handleSaveBookmark = (data: any, targetCategoryId: string) => {
+        if (editingBookmark) {
+            // --- UPDATE EXISTING ---
+            setCategories(prev => {
+                const updatedBookmark = { ...editingBookmark, ...data }; // Merge new data
+
+                // Find where it lives currently
+                const currentCat = prev.find(c => c.bookmarks.some((b: any) => b.id === editingBookmark.id));
+                const currentCatId = currentCat?.id;
+
+                if (!currentCatId) return prev;
+
+                if (currentCatId === targetCategoryId) {
+                    // Update in place (preserve order)
+                    return prev.map(cat => {
+                        if (cat.id === currentCatId) {
+                            return {
+                                ...cat,
+                                bookmarks: cat.bookmarks.map((b: any) => b.id === editingBookmark.id ? updatedBookmark : b)
+                            };
+                        }
+                        return cat;
+                    });
+                } else {
+                    // Move Category
+                    // 1. Remove from Old
+                    const tempState = prev.map(cat => {
+                        if (cat.id === currentCatId) {
+                            return { ...cat, bookmarks: cat.bookmarks.filter((b: any) => b.id !== editingBookmark.id) };
+                        }
+                        return cat;
+                    });
+
+                    // 2. Add to New (End of list)
+                    return tempState.map(cat => {
+                        if (cat.id === targetCategoryId) {
+                            return { ...cat, bookmarks: [...cat.bookmarks, updatedBookmark] };
+                        }
+                        return cat;
+                    });
+                }
+            });
+            setEditingBookmark(null);
+
+        } else {
+            // --- CREATE NEW ---
+            const newBookmark = {
+                ...data,
+                id: Date.now().toString(),
+                isStarred: false
+            };
+
+            setCategories(prev => prev.map(cat => {
+                if (cat.id === targetCategoryId) {
+                    return { ...cat, bookmarks: [...cat.bookmarks, newBookmark] };
+                }
+                return cat;
+            }));
+        }
+        setIsModalOpen(false);
+    };
+
+    const handleEditBookmark = (data: any) => {
+        setEditingBookmark(data);
+        setIsModalOpen(true);
+    };
+
+    const handleAddClick = () => {
+        setEditingBookmark(null); // Clear edit mode
+        setIsModalOpen(true);
+    }
+
+    const handleToggleStar = (bookmarkId: string) => {
+        setCategories(prev => prev.map(cat => ({
+            ...cat,
+            bookmarks: cat.bookmarks.map((b: any) => {
+                if (b.id === bookmarkId) {
+                    return { ...b, isStarred: !b.isStarred };
+                }
+                return b;
+            })
+        })));
+    };
+
+    const handleDeleteRequest = (id: string) => {
+        setBookmarkToDelete(id);
+    };
+
+    const confirmDeleteAction = () => {
+        if (!bookmarkToDelete) return;
+
+        const ownerCat = categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete));
+        if (!ownerCat) {
+            setBookmarkToDelete(null);
+            return;
+        }
+
+        if (ownerCat.id === 'dashboard') {
+            setCategories(prev => prev.map(cat => {
+                if (cat.id === 'dashboard') {
+                    return { ...cat, bookmarks: cat.bookmarks.filter((b: any) => b.id !== bookmarkToDelete) };
+                }
+                return cat;
+            }));
+        } else {
+            if (isDashboardView) {
+                handleToggleStar(bookmarkToDelete);
+            } else {
+                setCategories(prev => prev.map(cat => {
+                    if (cat.id === ownerCat.id) {
+                        return { ...cat, bookmarks: cat.bookmarks.filter((b: any) => b.id !== bookmarkToDelete) };
+                    }
+                    return cat;
+                }));
+            }
+        }
+        setBookmarkToDelete(null);
+    };
+
+
+    const handleAddCategory = (name: string) => {
+        const newCat = {
+            id: Date.now().toString(),
+            name,
+            bookmarks: []
+        };
+        setCategories(prev => [...prev, newCat]);
+        setSelectedCategoryId(newCat.id);
+    };
+
+    const handleDeleteCategory = (id: string) => {
+        if (id === 'dashboard') return;
+
+        if (categories.filter(c => c.id !== 'dashboard').length <= 1) {
+            alert("You must have at least one user category.");
+            return;
+        }
+        setCategories(prev => prev.filter(c => c.id !== id));
+        if (selectedCategoryId === id) setSelectedCategoryId('dashboard');
+    };
+
+    const sidebarCategories = categories.filter(c => c.id !== 'dashboard');
+    const modalCategories = categories;
+
+    // DnD is enabled only if NOT dashboard and NO search query
+    const isDndEnabled = !isDashboardView && !searchQuery;
+
+    // Calculate initial category for Modal
+    let modalInitialCategory = selectedCategoryId;
+    if (editingBookmark) {
+        const found = categories.find(c => c.bookmarks.some((b: any) => b.id === editingBookmark.id));
+        if (found) modalInitialCategory = found.id;
+    } else if (selectedCategoryId === 'dashboard') {
+        // If Adding new in Dashboard, default to Dashboard category
+        modalInitialCategory = 'dashboard';
+    }
+
+    return (
+        <div className="flex h-screen bg-secondary font-sans overflow-hidden">
+            <div className={`${isSidebarOpen ? 'block' : 'hidden'} md:block h-full shadow-xl z-20`}>
+                <Sidebar
+                    categories={sidebarCategories}
+                    selectedCategoryId={selectedCategoryId}
+                    onSelectCategory={setSelectedCategoryId}
+                    onAddCategory={handleAddCategory}
+                    onDeleteCategory={handleDeleteCategory}
+                />
+            </div>
+
+            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 z-10 w-full">
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-slate-500">
+                            <FaBars />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{activeCategoryTitle}</h1>
+                            <p className="text-xs text-slate-400">
+                                {activeCategoryBookmarks.length || 0} bookmarks
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <div className="relative group w-full md:w-64">
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-content transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <button
+                            onClick={handleAddClick}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary-content text-white rounded-full hover:bg-sky-700 shadow-md hover:shadow-lg active:scale-95 transition-all text-sm font-medium whitespace-nowrap"
+                        >
+                            <FaPlus size={12} /> Add New
+                        </button>
+                    </div>
+                </header>
+
+                <div className="flex-1 overflow-y-auto p-8">
+                    <div className="max-w-7xl mx-auto">
+
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={displayedBookmarks.map((b: any) => b.id)}
+                                strategy={rectSortingStrategy}
+                                disabled={!isDndEnabled}
+                            >
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-20">
+                                    {displayedBookmarks.map((item: any) => (
+                                        <SortableBookmarkItem
+                                            key={item.id}
+                                            {...item}
+                                            onDelete={() => handleDeleteRequest(item.id)}
+                                            onToggleStar={handleToggleStar}
+                                            onEdit={handleEditBookmark}
+                                        />
+                                    ))}
+
+                                    <button
+                                        onClick={handleAddClick}
+                                        className="group flex flex-col items-center justify-center p-8 bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all h-full min-h-[160px]"
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-primary-content group-hover:shadow-md transition-all mb-2">
+                                            <FaPlus size={16} />
+                                        </div>
+                                        <span className="text-sm text-slate-500 group-hover:text-primary-content font-medium">Add Shortcut</span>
+                                    </button>
+                                </div>
+                            </SortableContext>
+                        </DndContext>
+
+                        {displayedBookmarks.length === 0 && (
+                            <div className="text-center py-20">
+                                <p className="text-slate-400 text-sm">No bookmarks found.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+            </main>
+
+            <AddBookmarkModal
+                isOpen={isModalOpen}
+                onClose={() => { setIsModalOpen(false); setEditingBookmark(null); }}
+                onSave={handleSaveBookmark}
+                categories={modalCategories}
+                initialCategoryId={modalInitialCategory}
+                initialData={editingBookmark}
+            />
+
+            <ConfirmModal
+                isOpen={!!bookmarkToDelete}
+                title={isDashboardView && categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete))?.id !== 'dashboard'
+                    ? "Remove from Dashboard?"
+                    : "Delete Bookmark?"
+                }
+                message={isDashboardView && categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete))?.id !== 'dashboard'
+                    ? "This will remove the bookmark from the Dashboard view. It will remain in its original category."
+                    : "Are you sure you want to delete this bookmark? This action cannot be undone."
+                }
+                isDangerous={true}
+                confirmText={isDashboardView && categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete))?.id !== 'dashboard'
+                    ? "Remove"
+                    : "Delete"
+                }
+                onClose={() => setBookmarkToDelete(null)}
+                onConfirm={confirmDeleteAction}
+            />
+        </div>
+    )
 }
 
 export default Main;

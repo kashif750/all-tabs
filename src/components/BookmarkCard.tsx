@@ -57,9 +57,14 @@ const BookmarkCard = ({
           >
             {label}
           </Link>
-          <span className="text-xs text-slate-400 truncate" title={url}>
+          <Link
+            to={url}
+            target="_blank"
+            className="text-xs text-slate-400 truncate hover:underline hover:text-primary-content"
+            title={url}
+          >
             {url}
-          </span>
+          </Link>
         </div>
 
         {/* Action Buttons */}
@@ -67,7 +72,7 @@ const BookmarkCard = ({
           {hasCredentials && (
             <button
               onClick={() => setShowCredentials(!showCredentials)}
-              className={`p-1 rounded-full transition-colors ${showCredentials ? 'text-primary-content bg-primary/10' : 'text-slate-300 hover:text-primary-content'}`}
+              className={`p-1 rounded-full transition-colors cursor-pointer ${showCredentials ? 'text-primary-content bg-primary/10' : 'text-slate-300 hover:text-primary-content'}`}
               title={showCredentials ? "Hide Credentials" : "Show Credentials"}
             >
               {showCredentials ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
@@ -75,21 +80,23 @@ const BookmarkCard = ({
           )}
           <button
             onClick={() => onToggleStar(id)}
-            className={`p-1 rounded-full transition-colors ${isStarred ? 'text-amber-400 hover:text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
+            className={`p-1 rounded-full transition-colors cursor-pointer ${isStarred ? 'text-amber-400 hover:text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
             title={isStarred ? "Unstar" : "Star"}
           >
             {isStarred ? <FaStar size={14} /> : <FaRegStar size={14} />}
           </button>
           <button
             onClick={() => onEdit({ id, label, url, username, password })}
-            className="p-1 rounded-full text-slate-300 hover:text-sky-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+            className="p-1 rounded-full text-slate-300 hover:text-sky-500 opacity-100 transition-opacity cursor-pointer"
+            // className="p-1 rounded-full text-slate-300 hover:text-sky-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
             title="Edit"
           >
             <FaPen size={12} />
           </button>
           <button
             onClick={() => onDelete(id)}
-            className="p-1 rounded-full text-slate-300 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+            className="p-1 rounded-full text-slate-300 hover:text-red-500 opacity-100 transition-opacity cursor-pointer"
+            // className="p-1 rounded-full text-slate-300 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
             title="Delete"
           >
             <FaTrash size={12} />

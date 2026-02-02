@@ -452,7 +452,7 @@ const Main = () => {
                                 strategy={rectSortingStrategy}
                                 disabled={!isDndEnabled}
                             >
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 pb-20">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-1.5 md:gap-2.5 pb-20">
                                     {displayedBookmarks.map((item: any) => (
                                         <SortableBookmarkItem
                                             key={item.id}
@@ -465,12 +465,12 @@ const Main = () => {
 
                                     <button
                                         onClick={handleAddClick}
-                                        className="group flex flex-col items-center justify-center p-6 md:p-8 bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all h-full min-h-[140px] md:min-h-[160px]"
+                                        className="group flex gap-2 py-2 items-center justify-center bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary transition-all cursor-pointer"
                                     >
-                                        <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-primary-content group-hover:shadow-md transition-all mb-2">
+                                        <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-primary-content group-hover:shadow-md transition-all">
                                             <FaPlus size={16} />
                                         </div>
-                                        <span className="text-sm text-slate-500 group-hover:text-primary-content font-medium">Add Shortcut</span>
+                                        <span className="text-sm text-slate-500 group-hover:text-primary-content font-medium">Add Bookmark</span>
                                     </button>
                                 </div>
                             </SortableContext>

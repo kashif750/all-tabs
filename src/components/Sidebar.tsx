@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaFolder, FaPlus, FaTrash, FaThLarge } from "react-icons/fa";
+import logo from "../assets/logo.svg";
 
 interface Category {
     id: string;
@@ -32,7 +33,7 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
         <aside className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col shrink-0">
             <div className="p-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <FaFolder className="text-primary" /> Library
+                    <img src={logo} alt="Logo" className="w-8 h-8" /> All Tabs
                 </h2>
             </div>
 
@@ -76,7 +77,7 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                                 e.stopPropagation();
                                 onDeleteCategory(category.id);
                             }}
-                            className={`p-1.5 rounded-full hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity ${selectedCategoryId === category.id ? "text-primary-content" : "text-slate-400 hover:text-red-500"
+                            className={`p-1.5 rounded-full hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${selectedCategoryId === category.id ? "text-primary-content" : "text-slate-400 hover:text-red-500"
                                 }`}
                             title="Delete Category"
                         >

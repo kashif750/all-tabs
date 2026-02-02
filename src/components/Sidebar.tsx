@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FaFolder, FaPlus, FaTrash, FaThLarge } from "react-icons/fa";
+import { FaPlus, FaThLarge, FaTrash } from "react-icons/fa";
 import logo from "../assets/logo.svg";
 
 interface Category {

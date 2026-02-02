@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { FaTimes, FaUser, FaSave, FaLock } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { FaLock, FaSave, FaTimes, FaUser } from "react-icons/fa";
 
 interface ProfileModalProps {
     isOpen: boolean;
@@ -9,7 +9,7 @@ interface ProfileModalProps {
     onLogout: () => void;
 }
 
-const ProfileModal = ({ isOpen, onClose, user, onLogout }: ProfileModalProps) => {
+const ProfileModal = ({ isOpen, onClose, onLogout }: ProfileModalProps) => {
     const [formData, setFormData] = useState({
         firstName: "John",
         lastName: "Doe",

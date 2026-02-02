@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { FaFolder, FaPlus, FaTrash, FaThLarge } from "react-icons/fa";
-import ConfirmModal from "./ConfirmModal";
 
 interface Category {
     id: string;
@@ -19,7 +18,6 @@ interface SidebarProps {
 const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCategory, onDeleteCategory }: SidebarProps) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState("");
-    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,8 +40,8 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                 {/* Dashboard Static Item */}
                 <div
                     className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all mb-4 ${selectedCategoryId === 'dashboard'
-                            ? "bg-primary text-primary-content shadow-sm"
-                            : "text-slate-600 hover:bg-slate-50"
+                        ? "bg-primary text-primary-content shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50"
                         }`}
                     onClick={() => onSelectCategory('dashboard')}
                 >
@@ -61,8 +59,8 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                     <div
                         key={category.id}
                         className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${selectedCategoryId === category.id
-                                ? "bg-primary text-primary-content shadow-sm"
-                                : "text-slate-600 hover:bg-slate-50"
+                            ? "bg-primary text-primary-content shadow-sm"
+                            : "text-slate-600 hover:bg-slate-50"
                             }`}
                         onClick={() => onSelectCategory(category.id)}
                     >
@@ -76,7 +74,7 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setDeleteId(category.id);
+                                onDeleteCategory(category.id);
                             }}
                             className={`p-1.5 rounded-full hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity ${selectedCategoryId === category.id ? "text-primary-content" : "text-slate-400 hover:text-red-500"
                                 }`}
@@ -114,18 +112,6 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                     </button>
                 )}
             </div>
-
-            <ConfirmModal
-                isOpen={!!deleteId}
-                title="Delete Category?"
-                message="This will permanently delete this category and all bookmarks inside it. This action cannot be undone."
-                isDangerous={true}
-                confirmText="Delete Category"
-                onClose={() => setDeleteId(null)}
-                onConfirm={() => {
-                    if (deleteId) onDeleteCategory(deleteId);
-                }}
-            />
         </aside>
     );
 };

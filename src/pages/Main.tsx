@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaPlus, FaSearch, FaBars } from "react-icons/fa";
+import { FaPlus, FaSearch, FaBars, FaUser } from "react-icons/fa";
 import {
     DndContext,
     closestCenter,
@@ -17,11 +17,14 @@ import {
     useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import toast from "react-hot-toast";
 
 import BookmarkCard from "../components/BookmarkCard";
 import AddBookmarkModal from "../components/AddBookmarkModal";
 import Sidebar from "../components/Sidebar";
 import ConfirmModal from "../components/ConfirmModal";
+import SignInModal from "../components/SignInModal";
+import ProfileModal from "../components/ProfileModal";
 
 // --- Sortable Wrapper ---
 const SortableBookmarkItem = (props: any) => {
@@ -95,9 +98,13 @@ const Main = () => {
 
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('dashboard');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSignInOpen, setIsSignInOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [bookmarkToDelete, setBookmarkToDelete] = useState<string | null>(null);
+    const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
     const [editingBookmark, setEditingBookmark] = useState<any | null>(null);
 
     // Sync to local storage
@@ -352,25 +359,42 @@ const Main = () => {
     }
 
     return (
-        <div className="flex h-screen bg-secondary font-sans overflow-hidden">
-            <div className={`${isSidebarOpen ? 'block' : 'hidden'} md:block h-full shadow-xl z-20`}>
+        <div className="flex h-screen bg-secondary font-sans overflow-hidden relative">
+            {/* Mobile Sidebar Overlay Backdrop */}
+            {isSidebarOpen && (
+                <div
+                    className="absolute inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <div className={`
+                absolute md:static inset-y-0 left-0 z-30 
+                transform transition-transform duration-300 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                h-full shadow-xl bg-white
+            `}>
                 <Sidebar
                     categories={sidebarCategories}
                     selectedCategoryId={selectedCategoryId}
-                    onSelectCategory={setSelectedCategoryId}
+                    onSelectCategory={(id) => {
+                        setSelectedCategoryId(id);
+                        if (window.innerWidth < 768) setIsSidebarOpen(false); // Close on selection on mobile
+                    }}
                     onAddCategory={handleAddCategory}
-                    onDeleteCategory={handleDeleteCategory}
+                    onDeleteCategory={(id) => setCategoryToDelete(id)}
                 />
             </div>
 
-            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-                <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 z-10 w-full">
+            <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full">
+                <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 z-10 w-full">
                     <div className="flex items-center gap-4 w-full md:w-auto">
                         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-slate-500">
                             <FaBars />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{activeCategoryTitle}</h1>
+                            <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">{activeCategoryTitle}</h1>
                             <p className="text-xs text-slate-400">
                                 {activeCategoryBookmarks.length || 0} bookmarks
                             </p>
@@ -388,6 +412,24 @@ const Main = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
+
+                        {isLoggedIn ? (
+                            <button
+                                onClick={() => setIsProfileOpen(true)}
+                                className="w-9 h-9 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-sm shadow-md hover:shadow-lg transition-all"
+                                title="My Profile"
+                            >
+                                JD
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => setIsSignInOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-primary-content hover:bg-primary/10 rounded-full transition-all text-sm font-semibold whitespace-nowrap"
+                            >
+                                <FaUser size={12} /> Sign In
+                            </button>
+                        )}
+
                         <button
                             onClick={handleAddClick}
                             className="flex items-center gap-2 px-4 py-2 bg-primary-content text-white rounded-full hover:bg-sky-700 shadow-md hover:shadow-lg active:scale-95 transition-all text-sm font-medium whitespace-nowrap"
@@ -397,7 +439,7 @@ const Main = () => {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <div className="max-w-7xl mx-auto">
 
                         <DndContext
@@ -410,7 +452,7 @@ const Main = () => {
                                 strategy={rectSortingStrategy}
                                 disabled={!isDndEnabled}
                             >
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-20">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 pb-20">
                                     {displayedBookmarks.map((item: any) => (
                                         <SortableBookmarkItem
                                             key={item.id}
@@ -423,7 +465,7 @@ const Main = () => {
 
                                     <button
                                         onClick={handleAddClick}
-                                        className="group flex flex-col items-center justify-center p-8 bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all h-full min-h-[160px]"
+                                        className="group flex flex-col items-center justify-center p-6 md:p-8 bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all h-full min-h-[140px] md:min-h-[160px]"
                                     >
                                         <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-primary-content group-hover:shadow-md transition-all mb-2">
                                             <FaPlus size={16} />
@@ -470,6 +512,38 @@ const Main = () => {
                 }
                 onClose={() => setBookmarkToDelete(null)}
                 onConfirm={confirmDeleteAction}
+            />
+
+            <ConfirmModal
+                isOpen={!!categoryToDelete}
+                title="Delete Category?"
+                message="This will permanently delete this category and all bookmarks inside it. This action cannot be undone."
+                isDangerous={true}
+                confirmText="Delete Category"
+                onClose={() => setCategoryToDelete(null)}
+                onConfirm={() => {
+                    if (categoryToDelete) {
+                        handleDeleteCategory(categoryToDelete);
+                        setCategoryToDelete(null);
+                    }
+                }}
+            />
+
+            <SignInModal
+                isOpen={isSignInOpen}
+                onClose={() => setIsSignInOpen(false)}
+                onLoginSuccess={() => {
+                    setIsLoggedIn(true);
+                }}
+            />
+
+            <ProfileModal
+                isOpen={isProfileOpen}
+                onClose={() => setIsProfileOpen(false)}
+                onLogout={() => {
+                    setIsLoggedIn(false);
+                    toast.success("Logged out successfully");
+                }}
             />
         </div>
     )

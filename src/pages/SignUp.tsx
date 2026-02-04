@@ -2,6 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { FaArrowLeft, FaLock, FaUser, FaUserPlus } from "react-icons/fa";
 import { Link, useNavigate } from "react-router";
+import { authService } from "../services/auth.service";
 
 const SignUp = () => {
     const navigate = useNavigate();
@@ -14,7 +15,7 @@ const SignUp = () => {
         confirmPassword: ""
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
@@ -27,13 +28,26 @@ const SignUp = () => {
             return;
         }
 
-        console.log("Registration:", formData);
-        toast.success("Account created successfully!");
+        try {
+            // Mapping frontend keys to backend expectations (snake_case)
+            const payload = {
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                username: formData.username,
+                password: formData.password,
+            };
 
-        // Redirect to Home (Sign In)
-        setTimeout(() => {
-            navigate("/");
-        }, 1500);
+            // Assuming authService is imported
+            await authService.signup(payload);
+
+            toast.success("Account created successfully!");
+            setTimeout(() => {
+                navigate("/");
+            }, 1500);
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Registration failed";
+            toast.error(typeof message === 'object' ? JSON.stringify(message) : message);
+        }
     };
 
     return (

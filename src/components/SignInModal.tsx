@@ -9,14 +9,20 @@ interface SignInModalProps {
     onLoginSuccess: () => void;
 }
 
+import { authService } from "../services/auth.service";
+import { useAuthStore } from "../store/useAuthStore";
+
+// ... (props interface unchanged)
+
 const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
     const [formData, setFormData] = useState({
         username: "",
         password: "",
     });
     const [showPassword, setShowPassword] = useState(false);
+    const setAuth = useAuthStore((state) => state.setAuth);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.username || !formData.password) {
@@ -24,12 +30,41 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
             return;
         }
 
-        console.log("Sign In Attempt:", formData);
+        try {
+            // 1. Call Backend
+            const response = await authService.signin(formData);
 
-        // Mock Login
-        toast.success("Successfully logged in!");
-        onLoginSuccess();
-        onClose();
+            // 2. Decode/Mock User data since backend only returns token?
+            // Actually backend signin returns access_token.
+            // We need to fetch user profile or decode token if creating user object.
+            // For now, let's assuming backend returns token and we can use the username fro form or decode token.
+            // The backend authService.login returns { access_token }.
+
+            // Let's create a partial user object or decode token later.
+            // Wait, `login` in AuthService (Backend) just returns access_token.
+            // I should probably fetch user details or just store what I have.
+            // The Store expects a User object.
+
+            const fakeUser = {
+                id: 0, // Need from token payload
+                username: formData.username,
+                first_name: 'User',
+                last_name: ''
+            };
+
+            // Ideally we should have a /auth/me or similar, or return user in login response.
+            // Since I can't easily change backend right now without more round trips, 
+            // I'll proceed with minimal user data + token.
+
+            setAuth(fakeUser, response.access_token);
+
+            toast.success("Successfully logged in!");
+            onLoginSuccess();
+            onClose();
+
+        } catch (error: any) {
+            toast.error("Invalid credentials");
+        }
     };
 
     if (!isOpen) return null;

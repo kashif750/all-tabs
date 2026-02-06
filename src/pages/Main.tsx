@@ -445,7 +445,7 @@ const Main = () => {
                         {isLoggedIn ? (
                             <button
                                 onClick={() => setIsProfileOpen(true)}
-                                className="w-9 h-9 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-sm shadow-md hover:shadow-lg transition-all"
+                                className="w-9 h-9 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer capitalize"
                                 title="My Profile"
                             >
                                 {authUser?.first_name?.charAt(0) || <FaUser />}
@@ -453,7 +453,7 @@ const Main = () => {
                         ) : (
                             <button
                                 onClick={() => setIsSignInOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-primary-content hover:bg-primary/10 rounded-full transition-all text-sm font-semibold whitespace-nowrap"
+                                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-primary-content hover:bg-primary/10 rounded-full transition-all text-sm font-semibold whitespace-nowrap cursor-pointer"
                             >
                                 <FaUser size={12} /> Sign In
                             </button>

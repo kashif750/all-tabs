@@ -40,7 +40,7 @@ const SignUp = () => {
             // Assuming authService is imported
             await authService.signup(payload);
 
-            toast.success("Account created successfully!");
+            toast.success("Account created successfully!.");
             setTimeout(() => {
                 navigate("/");
             }, 1500);
@@ -64,38 +64,41 @@ const SignUp = () => {
                 <form onSubmit={handleSubmit} className="space-y-4 mb-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-600 ml-1">First Name</label>
+                            <label className="text-xs font-semibold text-slate-600 ml-1">First Name*</label>
                             <input
                                 type="text"
-                                placeholder="John"
+                                placeholder="Enter First Name"
                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
                                 value={formData.firstName}
+                                maxLength={50}
                                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-600 ml-1">Last Name</label>
+                            <label className="text-xs font-semibold text-slate-600 ml-1">Last Name*</label>
                             <input
                                 type="text"
-                                placeholder="Doe"
+                                placeholder="Enter Last Name"
                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
                                 value={formData.lastName}
+                                maxLength={50}
                                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-600 ml-1">Username</label>
+                        <label className="text-xs font-semibold text-slate-600 ml-1">Username*</label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                                 <FaUser size={12} />
                             </span>
                             <input
                                 type="text"
-                                placeholder="johndoe"
+                                placeholder="Enter Username"
                                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
                                 value={formData.username}
+                                maxLength={100}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                             />
                         </div>
@@ -103,7 +106,7 @@ const SignUp = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-600 ml-1">Password</label>
+                            <label className="text-xs font-semibold text-slate-600 ml-1">Password*</label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                                     <FaLock size={12} />
@@ -113,12 +116,13 @@ const SignUp = () => {
                                     placeholder="••••••••"
                                     className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
                                     value={formData.password}
+                                    maxLength={100}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
                             </div>
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-600 ml-1">Confirm</label>
+                            <label className="text-xs font-semibold text-slate-600 ml-1">Confirm*</label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                                     <FaLock size={12} />
@@ -128,6 +132,7 @@ const SignUp = () => {
                                     placeholder="••••••••"
                                     className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
                                     value={formData.confirmPassword}
+                                    maxLength={100}
                                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                 />
                             </div>
@@ -136,7 +141,7 @@ const SignUp = () => {
 
                     <button
                         type="submit"
-                        className="w-full py-3 bg-gradient-to-r from-primary-content to-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
+                        className="w-full py-3 bg-gradient-to-r from-primary-content to-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4 hover:cursor-pointer"
                     >
                         Create Account
                     </button>
@@ -145,7 +150,7 @@ const SignUp = () => {
                 <div className="text-center">
                     <Link
                         to="/"
-                        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors text-sm"
+                        className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors text-sm hover:underline"
                     >
                         <FaArrowLeft size={10} /> Back to Sign In
                     </Link>

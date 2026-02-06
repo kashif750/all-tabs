@@ -59,84 +59,57 @@ const Main = () => {
 
     // ---- STATE ----
     const [categories, setCategories] = useState<any[]>([]);
-    const [rawBookmarks, setRawBookmarks] = useState<any[]>([]); // Store raw API bookmarks
+    // const [bookmarks, setBookmarks] = useState<any>({}); // Store raw API bookmarks
+    const [data, setData]=useState<any>({});
+    const [selectedBookmarks, setSelectedBookmarks]=useState<any[]>([]);
 
     // Helper to build hierarchy locally for views
-    const buildCategoryTree = (cats: any[], bks: any[]) => {
-        // Map backend categories to frontend structure
-        // { id, name, bookmarks: [] }
-        // Backend Category: { id, category_name }
-        // Backend Bookmark: { id, label, url, category: { id } }
+    // const buildCategoryTree = (cats: any[], bks: any[]) => {
+    //     // Map backend categories to frontend structure
+    //     // { id, name, bookmarks: [] }
+    //     // Backend Category: { id, category_name }
+    //     // Backend Bookmark: { id, label, url, category: { id } }
 
-        const mappedCats = cats.map(c => ({
-            id: c.id.toString(),
-            name: c.category_name,
-            bookmarks: bks.filter(b => b.category?.id === c.id || b.category_id === c.id).map(b => ({
-                ...b,
-                id: b.id.toString(),
-                isStarred: b.isHighlighted, // Map isHighlighted -> isStarred
-                url: b.url || '', // Safety
-            }))
-        }));
+    //     const mappedCats = cats.map(c => ({
+    //         id: c.id.toString(),
+    //         name: c.category_name,
+    //         bookmarks: bks.filter(b => b.category?.id === c.id || b.category_id === c.id).map(b => ({
+    //             ...b,
+    //             id: b.id.toString(),
+    //             isStarred: b.isHighlighted, // Map isHighlighted -> isStarred
+    //             url: b.url || '', // Safety
+    //         }))
+    //     }));
 
-        // Add Dashboard concept
-        // Dashboard is a virtual view, not a category in DB usually, but frontend treats it as one
-        // Or we can just have 'Dashboard' as id='dashboard'.
+    //     // Add Dashboard concept
+    //     // Dashboard is a virtual view, not a category in DB usually, but frontend treats it as one
+    //     // Or we can just have 'Dashboard' as id='dashboard'.
 
-        // Ensure Dashboard exists in list? 
-        // Frontend logic expects 'dashboard' in categories list for Sidebar?
-        // Yes, logic at line 89 checks format.
+    //     // Ensure Dashboard exists in list? 
+    //     // Frontend logic expects 'dashboard' in categories list for Sidebar?
+    //     // Yes, logic at line 89 checks format.
 
-        const dashboardCat = {
-            id: 'dashboard',
-            name: 'Dashboard',
-            bookmarks: [] // Populated by logic later in render
-        };
+    //     const dashboardCat = {
+    //         id: 'dashboard',
+    //         name: 'Dashboard',
+    //         bookmarks: [] // Populated by logic later in render
+    //     };
 
-        return [dashboardCat, ...mappedCats];
-    };
+    //     return [dashboardCat, ...mappedCats];
+    // };
 
-    const fetchData = async () => {
-        if (!isLoggedIn) {
-            // Load Mock/Local if not logged in?
-            // Or clear.
-            // For now, let's keep local storage fallback or just clear.
-            setCategories([
-                { id: 'dashboard', name: 'Dashboard', bookmarks: [] }
-            ]);
-            return;
-        }
 
-        try {
-            const [catsData, bksData] = await Promise.all([
-                dataService.getCategories(),
-                dataService.getBookmarks()
-            ]);
-
-            setRawBookmarks(bksData);
-            const tree = buildCategoryTree(catsData, bksData);
-            setCategories(tree);
-
-        } catch (error) {
-            console.error("Failed to fetch data", error);
-            toast.error("Failed to load data");
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, [isLoggedIn]);
-
-    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('dashboard');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
+    const [isBookmarkModalOpened, setIsBookmarkModalOpened] = useState(false);
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     // const [isLoggedIn, setIsLoggedIn] = useState(false); // REPLACED by Store
     const [searchQuery, setSearchQuery] = useState("");
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [bookmarkToDelete, setBookmarkToDelete] = useState<string | null>(null);
-    const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+    const [bookmarkToDelete, setBookmarkToDelete] = useState<number>(0);
+    const [categoryToDelete, setCategoryToDelete] = useState<number>(0);
     const [editingBookmark, setEditingBookmark] = useState<any | null>(null);
+    console.log("editingBookmark:: ", editingBookmark);
 
     // Sync to local storage -> DISABLED or Modified to only sync if guest?
     // For now disabling legacy Sync
@@ -161,243 +134,258 @@ const Main = () => {
 
     // ---- COMPUTED VIEWS ----
 
-    let activeCategoryTitle = "";
-    let activeCategoryBookmarks: any[] = [];
-    let isDashboardView = selectedCategoryId === 'dashboard';
+    // let activeCategoryTitle = "";
+    // let activeCategoryBookmarks: any[] = [];
+    // let isDashboardView = selectedCategoryId === 'dashboard';
 
-    if (isDashboardView) {
-        activeCategoryTitle = "Dashboard";
-        const dashboardCat = categories.find(c => c.id === 'dashboard');
-        const dashboardItems = dashboardCat ? dashboardCat.bookmarks.map((b: any) => ({ ...b, _categoryId: 'dashboard' })) : [];
+    // if (isDashboardView) {
+    //     activeCategoryTitle = "Dashboard";
+    //     const dashboardCat = categories.find(c => c.id === 'dashboard');
+    //     const dashboardItems = dashboardCat ? dashboardCat.bookmarks.map((b: any) => ({ ...b, _categoryId: 'dashboard' })) : [];
 
-        const otherCats = categories.filter(c => c.id !== 'dashboard');
-        const starredItems = otherCats.flatMap(cat =>
-            cat.bookmarks.filter((b: any) => b.isStarred).map((b: any) => ({ ...b, _categoryId: cat.id }))
-        );
+    //     const otherCats = categories.filter(c => c.id !== 'dashboard');
+    //     const starredItems = otherCats.flatMap(cat =>
+    //         cat.bookmarks.filter((b: any) => b.isStarred).map((b: any) => ({ ...b, _categoryId: cat.id }))
+    //     );
 
-        activeCategoryBookmarks = [...dashboardItems, ...starredItems];
+    //     activeCategoryBookmarks = [...dashboardItems, ...starredItems];
 
-    } else {
-        const cat = categories.find(c => c.id === selectedCategoryId);
-        if (cat) {
-            activeCategoryTitle = cat.name;
-            activeCategoryBookmarks = cat.bookmarks.map((b: any) => ({ ...b, _categoryId: cat.id }));
-        } else if (categories.length > 0) {
-            setSelectedCategoryId('dashboard');
-        }
-    }
+    // } else {
+    //     const cat = categories.find(c => c.id === selectedCategoryId);
+    //     if (cat) {
+    //         activeCategoryTitle = cat.name;
+    //         activeCategoryBookmarks = cat.bookmarks.map((b: any) => ({ ...b, _categoryId: cat.id }));
+    //     } else if (categories.length > 0) {
+    //         setSelectedCategoryId('dashboard');
+    //     }
+    // }
 
     // Filter by search
-    let displayedBookmarks = activeCategoryBookmarks.filter((item: any) =>
-        item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.url.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // let displayedBookmarks = activeCategoryBookmarks.filter((item: any) =>
+    //     item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //     item.url.toLowerCase().includes(searchQuery.toLowerCase())
+    // );
 
     // SORTING: 
     // In Dashboard: Auto-sort (Starred first, A-Z)
     // In Categories: MANUAL ORDER (DnD, so no auto-sort)
 
-    if (isDashboardView) {
-        displayedBookmarks.sort((a: any, b: any) => {
-            const aImportant = a.isStarred || a._categoryId === 'dashboard';
-            const bImportant = b.isStarred || b._categoryId === 'dashboard';
-            if (aImportant !== bImportant) {
-                return aImportant ? -1 : 1;
-            }
-            return a.label.localeCompare(b.label);
-        });
-    }
+    // if (isDashboardView) {
+    //     displayedBookmarks.sort((a: any, b: any) => {
+    //         const aImportant = a.isStarred || a._categoryId === 'dashboard';
+    //         const bImportant = b.isStarred || b._categoryId === 'dashboard';
+    //         if (aImportant !== bImportant) {
+    //             return aImportant ? -1 : 1;
+    //         }
+    //         return a.label.localeCompare(b.label);
+    //     });
+    // }
 
     // ---- ACTIONS ----
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
 
-        if (isDashboardView || searchQuery) return;
+        // if (isDashboardView || searchQuery) return;
 
-        if (active.id !== over?.id) {
-            setCategories((prev) => {
-                return prev.map(cat => {
-                    if (cat.id === selectedCategoryId) {
-                        const oldIndex = cat.bookmarks.findIndex((b: any) => b.id === active.id);
-                        const newIndex = cat.bookmarks.findIndex((b: any) => b.id === over?.id);
+        // if (active.id !== over?.id) {
+        //     setCategories((prev) => {
+        //         return prev.map(cat => {
+        //             if (cat.id === selectedCategoryId) {
+        //                 const oldIndex = cat.bookmarks.findIndex((b: any) => b.id === active.id);
+        //                 const newIndex = cat.bookmarks.findIndex((b: any) => b.id === over?.id);
 
-                        if (oldIndex !== -1 && newIndex !== -1) {
-                            return {
-                                ...cat,
-                                bookmarks: arrayMove(cat.bookmarks, oldIndex, newIndex)
-                            };
-                        }
-                    }
-                    return cat;
-                });
-            });
-        }
-    };
-
-    const handleSaveBookmark = async (data: any, targetCategoryId: string) => {
-        if (!isLoggedIn) {
-            toast.error("Please login to save bookmarks");
-            return;
-        }
-
-        try {
-            if (editingBookmark) {
-                // --- UPDATE EXISTING ---
-                const updatePayload = {
-                    label: data.label,
-                    url: data.url,
-                    username: data.username,
-                    password: data.password,
-                    isHighlighted: editingBookmark.isStarred, // Preserve star status unless changed elsewehere
-                    category_id: parseInt(targetCategoryId)
-                };
-
-                await dataService.updateBookmark(parseInt(editingBookmark.id), updatePayload);
-                toast.success("Bookmark updated");
-
-            } else {
-                // --- CREATE NEW ---
-                const createPayload = {
-                    label: data.label,
-                    url: data.url,
-                    username: data.username,
-                    password: data.password,
-                    isHighlighted: false,
-                    category_id: parseInt(targetCategoryId)
-                };
-
-                await dataService.createBookmark(createPayload);
-                toast.success("Bookmark created");
-            }
-
-            // Refresh Data
-            fetchData();
-            setIsModalOpen(false);
-            setEditingBookmark(null);
-
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to save bookmark");
-        }
+        //                 if (oldIndex !== -1 && newIndex !== -1) {
+        //                     return {
+        //                         ...cat,
+        //                         bookmarks: arrayMove(cat.bookmarks, oldIndex, newIndex)
+        //                     };
+        //                 }
+        //             }
+        //             return cat;
+        //         });
+        //     });
+        // }
     };
 
     const handleEditBookmark = (data: any) => {
         setEditingBookmark(data);
-        setIsModalOpen(true);
+        setIsBookmarkModalOpened(true);
     };
 
     const handleAddClick = () => {
         setEditingBookmark(null); // Clear edit mode
-        setIsModalOpen(true);
+        setIsBookmarkModalOpened(true);
     }
 
-    const handleToggleStar = async (bookmarkId: string) => {
-        // Find current state
-        let currentStatus = false;
-        categories.forEach(c => {
-            const b = c.bookmarks.find((bk: any) => bk.id === bookmarkId);
-            if (b) currentStatus = b.isStarred;
-        });
+    // const handleToggleStar = async (bookmarkId: string) => {
+    //     // Find current state
+    //     let currentStatus = false;
+    //     categories.forEach(c => {
+    //         const b = c.bookmarks.find((bk: any) => bk.id === bookmarkId);
+    //         if (b) currentStatus = b.isStarred;
+    //     });
 
-        try {
-            await dataService.updateBookmark(parseInt(bookmarkId), { isHighlighted: !currentStatus });
-            // Optimistic update or fetch? fetch for now easiest
-            fetchData();
-        } catch (e) {
-            toast.error("Failed to update");
-        }
-    };
+    //     try {
+    //         await dataService.updateBookmark(parseInt(bookmarkId), { isHighlighted: !currentStatus });
+    //         // Optimistic update or fetch? fetch for now easiest
+    //         fetchData();
+    //     } catch (e) {
+    //         toast.error("Failed to update");
+    //     }
+    // };
 
-    const handleDeleteRequest = (id: string) => {
+    const handleDeleteRequest = (id: number) => {
         setBookmarkToDelete(id);
     };
-
-    const confirmDeleteAction = async () => {
-        if (!bookmarkToDelete) return;
-
-        const ownerCat = categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete));
-        if (!ownerCat) {
-            setBookmarkToDelete(null);
-            return;
-        }
-
-        if (ownerCat.id === 'dashboard') {
-            // Dashboard delete logic is purely frontend view usually, but here 
-            // the user might mean "unstar" if it's there via Star.
-            // If it's a DIRECT dashboard bookmark (not implemented in backend yet, assume all have categories),
-            // then it's just removing from view?
-
-            // Backend architecture: Bookmarks MUST belong to a Category. 
-            // So "Deleting from Dashboard" usually means "Unstar" if it's there because of star.
-            // Or if we have a "Dashboard" category in DB.
-
-            // For now, simpler logic: If it's starred, unstar.
-            await handleToggleStar(bookmarkToDelete);
-
-        } else {
-            // Permanently delete
-            try {
-                await dataService.deleteBookmark(parseInt(bookmarkToDelete));
-                toast.success("Bookmark deleted");
-                fetchData();
-            } catch (e) {
-                toast.error("Failed to delete");
-            }
-        }
-        setBookmarkToDelete(null);
-    };
-
 
     const handleAddCategory = async (name: string) => {
         try {
             const newCat = await dataService.createCategory(name);
+            console.log("handleAddCategory:: ", newCat);
             toast.success("Category created");
-            await fetchData();
-            setSelectedCategoryId(newCat.id.toString());
+            const _newCategory={
+                name: newCat.category_name,
+                value: newCat.id,
+            }
+            setCategories((prev)=>([...prev, _newCategory]));
+            // await fetchData();
+            // setSelectedCategoryId(newCat.id.toString());
         } catch (e) {
             toast.error("Failed to create category");
         }
     };
 
-    const handleDeleteCategory = async (id: string) => {
-        if (id === 'dashboard') return;
+    const handleDeleteCategory = async (id: number) => {
+        // if (id === 'dashboard') return;
 
-        if (categories.filter(c => c.id !== 'dashboard').length <= 1) {
-            // alert("You must have at least one user category.");
-            // Actually let's allow deleting even if last, or keep restricted.
-        }
+        // if (categories.filter(c => c.id !== 'dashboard').length <= 1) {
+        //     // alert("You must have at least one user category.");
+        //     // Actually let's allow deleting even if last, or keep restricted.
+        // }
 
         try {
-            await dataService.deleteCategory(parseInt(id));
+            await dataService.deleteCategory(id);
             toast.success("Category deleted");
-            await fetchData();
-            if (selectedCategoryId === id) setSelectedCategoryId('dashboard');
+            setCategories((prev)=>prev?.filter((itm)=>itm.value!==id));
+            // await fetchData();
+            // if (selectedCategoryId === id) setSelectedCategoryId('dashboard');
         } catch (e) {
             toast.error("Failed to delete category");
         }
     };
+    const getCategoryDropdowns = async () => {
+        try {
+            const response = await dataService.getCategoryDropdowns();
+            console.log("getCategoryDropdowns:: ", response);
+            setCategories(response || []);
+            setSelectedCategoryId(response?.[0]?.value || 0);
+        } catch (e) {
+            toast.error("Failed to get CategoryDropdowns");
+        }
+    };
+    const getUserBookmarks = async () => {
+        try {
+            const response = await dataService.getData();
+            console.log("getUserBookmarks:: ", response);
+            // setCategories(response || []);
+            setData(response || {});
+        } catch (e) {
+            toast.error("Failed to get CategoryDropdowns");
+        }
+    };
 
-    const sidebarCategories = categories.filter(c => c.id !== 'dashboard');
-    const modalCategories = categories.filter(c => c.id !== 'dashboard'); // Hide Dashboard from add modal
+    const handleSaveBookmark = async (data: any, targetCategoryId: number) => {
+        if (!isLoggedIn) {
+            toast.error("Please login to save bookmarks");
+            return;
+        }
+        try {
+            const createPayload = {
+                label: data.label,
+                url: data.url,
+                username: data.username || null,
+                password: data.password || null,
+                // isHighlighted: false,
+                category_id: targetCategoryId
+            };
+            if(editingBookmark){
+                await dataService.updateBookmark(editingBookmark.id, createPayload);
+            }else{
+                await dataService.createBookmark(createPayload);
+            }
+            getUserBookmarks();
+            toast.success("Bookmark created");
+            setIsBookmarkModalOpened(false); 
+            setEditingBookmark(null);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to save bookmark");
+        }
+    };
+    
+    const confirmDeleteAction = async () => {
+        if (!bookmarkToDelete) return;
+
+        // const ownerCat = categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete));
+        // if (!ownerCat) {
+        //     setBookmarkToDelete(0);
+        //     return;
+        // }
+
+        // if (ownerCat.id === 'dashboard') {
+        //     // Dashboard delete logic is purely frontend view usually, but here 
+        //     // the user might mean "unstar" if it's there via Star.
+        //     // If it's a DIRECT dashboard bookmark (not implemented in backend yet, assume all have categories),
+        //     // then it's just removing from view?
+
+        //     // Backend architecture: Bookmarks MUST belong to a Category. 
+        //     // So "Deleting from Dashboard" usually means "Unstar" if it's there because of star.
+        //     // Or if we have a "Dashboard" category in DB.
+
+        //     // For now, simpler logic: If it's starred, unstar.
+        //     await handleToggleStar(bookmarkToDelete);
+
+        // } else {
+        //     // Permanently delete
+            try {
+                await dataService.deleteBookmark(bookmarkToDelete);
+                toast.success("Bookmark deleted");
+                getUserBookmarks();
+                // fetchData();
+            } catch (e) {
+                toast.error("Failed to delete");
+            }
+        // }
+        // setBookmarkToDelete(0);
+    };
+
+    // const sidebarCategories = categories.filter(c => c.id !== 'dashboard');
+    // const modalCategories = categories.filter(c => c.id !== 'dashboard'); // Hide Dashboard from add modal
 
     // DnD is enabled only if NOT dashboard and NO search query
     // NOTE: Backend doesn't support reordering yet.
     // So DnD will visually work but not persist order to backend unless we add 'order' field.
     // Disabling DnD for now or just keeping it local-only (useless on refresh).
-    const isDndEnabled = false; // !isDashboardView && !searchQuery;
+    // const isDndEnabled = false; // !isDashboardView && !searchQuery;
 
     // Calculate initial category for Modal
-    let modalInitialCategory = selectedCategoryId;
-    if (editingBookmark) {
-        const found = categories.find(c => c.bookmarks.some((b: any) => b.id === editingBookmark.id));
-        if (found) modalInitialCategory = found.id;
-    } else if (selectedCategoryId === 'dashboard') {
-        // If Adding new in Dashboard, default to first category?
-        // or let modal handle it.
-        if (modalCategories.length > 0) modalInitialCategory = modalCategories[0].id;
-    }
-
+    // let modalInitialCategory = selectedCategoryId;
+    // if (editingBookmark) {
+    //     const found = categories.find(c => c.bookmarks.some((b: any) => b.id === editingBookmark.id));
+    //     if (found) modalInitialCategory = found.id;
+    // } else if (selectedCategoryId === 'dashboard') {
+    //     // If Adding new in Dashboard, default to first category?
+    //     // or let modal handle it.
+    //     if (modalCategories.length > 0) modalInitialCategory = modalCategories[0].id;
+    // }
+    
+    useEffect(() => {
+        if(isLoggedIn){
+            getCategoryDropdowns();
+            getUserBookmarks();
+        }
+    }, [isLoggedIn]);
     return (
         <div className="flex h-screen bg-secondary font-sans overflow-hidden relative">
             {/* Mobile Sidebar Overlay Backdrop */}
@@ -416,14 +404,15 @@ const Main = () => {
                 h-full shadow-xl bg-white
             `}>
                 <Sidebar
-                    categories={sidebarCategories}
+                    categories={categories}
                     selectedCategoryId={selectedCategoryId}
-                    onSelectCategory={(id) => {
+                    onSelectCategory={(id:number) => {
                         setSelectedCategoryId(id);
                         if (window.innerWidth < 768) setIsSidebarOpen(false); // Close on selection on mobile
                     }}
                     onAddCategory={handleAddCategory}
                     onDeleteCategory={(id) => setCategoryToDelete(id)}
+                    // onDeleteCategory={(id) => handleDeleteCategory(id)}
                 />
             </div>
 
@@ -433,16 +422,16 @@ const Main = () => {
                         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-slate-500">
                             <FaBars />
                         </button>
-                        <div>
+                        {/* <div>
                             <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">{activeCategoryTitle}</h1>
                             <p className="text-xs text-slate-400">
                                 {activeCategoryBookmarks.length || 0} bookmarks
                             </p>
-                        </div>
+                        </div> */}
                     </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto">
-                        <div className="relative group w-full md:w-64">
+                        {/* <div className="relative group w-full md:w-64">
                             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-content transition-colors" />
                             <input
                                 type="text"
@@ -451,7 +440,7 @@ const Main = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                        </div>
+                        </div> */}
 
                         {isLoggedIn ? (
                             <button
@@ -472,9 +461,10 @@ const Main = () => {
 
                         <button
                             onClick={handleAddClick}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary-content text-white rounded-full hover:bg-sky-700 shadow-md hover:shadow-lg active:scale-95 transition-all text-sm font-medium whitespace-nowrap"
+                            title={"Add New Bookmark"}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary-content text-white rounded-full hover:bg-sky-700 shadow-md hover:shadow-lg active:scale-95 transition-all text-sm font-medium whitespace-nowrap cursor-pointer"
                         >
-                            <FaPlus size={12} /> Add New
+                            <FaPlus size={12} /> Add New BookMark
                         </button>
                     </div>
                 </header>
@@ -482,7 +472,7 @@ const Main = () => {
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <div className="max-w-7xl mx-auto">
 
-                        <DndContext
+                        {/* <DndContext
                             sensors={sensors}
                             collisionDetection={closestCenter}
                             onDragEnd={handleDragEnd}
@@ -491,14 +481,23 @@ const Main = () => {
                                 items={displayedBookmarks.map((b: any) => b.id)}
                                 strategy={rectSortingStrategy}
                                 disabled={!isDndEnabled}
-                            >
+                            > */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-1.5 md:gap-2.5 pb-20">
-                                    {displayedBookmarks.map((item: any) => (
+                                    {/* {displayedBookmarks.map((item: any) => (
                                         <SortableBookmarkItem
                                             key={item.id}
                                             {...item}
                                             onDelete={() => handleDeleteRequest(item.id)}
                                             onToggleStar={handleToggleStar}
+                                            onEdit={handleEditBookmark}
+                                        />
+                                    ))} */}
+                                    {data?.[selectedCategoryId]?.map((item: any) => (
+                                        <BookmarkCard
+                                            key={item.id}
+                                            {...item}
+                                            onDelete={() => handleDeleteRequest(item.id)}
+                                            // onToggleStar={handleToggleStar}
                                             onEdit={handleEditBookmark}
                                         />
                                     ))}
@@ -513,10 +512,10 @@ const Main = () => {
                                         <span className="text-sm text-slate-500 group-hover:text-primary-content font-medium">Add Bookmark</span>
                                     </button>
                                 </div>
-                            </SortableContext>
-                        </DndContext>
+                            {/* </SortableContext>
+                        </DndContext> */}
 
-                        {displayedBookmarks.length === 0 && (
+                        {(data?.[selectedCategoryId] || []).length === 0 && (
                             <div className="text-center py-20">
                                 <p className="text-slate-400 text-sm">No bookmarks found.</p>
                             </div>
@@ -527,30 +526,21 @@ const Main = () => {
             </main>
 
             <AddBookmarkModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingBookmark(null); }}
+                isOpen={isBookmarkModalOpened}
+                onClose={() => { setIsBookmarkModalOpened(false); setEditingBookmark(null); }}
                 onSave={handleSaveBookmark}
-                categories={modalCategories}
-                initialCategoryId={modalInitialCategory}
+                categories={categories}
+                initialCategoryId={selectedCategoryId}
                 initialData={editingBookmark}
             />
 
             <ConfirmModal
                 isOpen={!!bookmarkToDelete}
-                title={isDashboardView && categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete))?.id !== 'dashboard'
-                    ? "Remove from Dashboard?"
-                    : "Delete Bookmark?"
-                }
-                message={isDashboardView && categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete))?.id !== 'dashboard'
-                    ? "This will remove the bookmark from the Dashboard view. It will remain in its original category."
-                    : "Are you sure you want to delete this bookmark? This action cannot be undone."
-                }
+                title={"Delete Bookmark?"}
+                message={"Are you sure you want to delete this bookmark? This action cannot be undone."}
                 isDangerous={true}
-                confirmText={isDashboardView && categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete))?.id !== 'dashboard'
-                    ? "Remove"
-                    : "Delete"
-                }
-                onClose={() => setBookmarkToDelete(null)}
+                confirmText={"Delete"}
+                onClose={() => setBookmarkToDelete(0)}
                 onConfirm={confirmDeleteAction}
             />
 
@@ -560,11 +550,11 @@ const Main = () => {
                 message="This will permanently delete this category and all bookmarks inside it. This action cannot be undone."
                 isDangerous={true}
                 confirmText="Delete Category"
-                onClose={() => setCategoryToDelete(null)}
+                onClose={() => setCategoryToDelete(0)}
                 onConfirm={() => {
                     if (categoryToDelete) {
                         handleDeleteCategory(categoryToDelete);
-                        setCategoryToDelete(null);
+                        setCategoryToDelete(0);
                     }
                 }}
             />

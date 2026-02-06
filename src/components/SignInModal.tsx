@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaTimes, FaUser, FaLock, FaSignInAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link } from "react-router";
 import toast from "react-hot-toast";
+import {jwtDecode} from 'jwt-decode';
 
 interface SignInModalProps {
     isOpen: boolean;
@@ -11,8 +12,6 @@ interface SignInModalProps {
 
 import { authService } from "../services/auth.service";
 import { useAuthStore } from "../store/useAuthStore";
-
-// ... (props interface unchanged)
 
 const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
     const [formData, setFormData] = useState({
@@ -25,43 +24,24 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.username || !formData.password) {
+        if (!formData.username.trim() || !formData.password.trim()) {
             toast.error("Please enter username and password");
             return;
         }
 
         try {
-            // 1. Call Backend
-            const response = await authService.signin(formData);
-
-            // 2. Decode/Mock User data since backend only returns token?
-            // Actually backend signin returns access_token.
-            // We need to fetch user profile or decode token if creating user object.
-            // For now, let's assuming backend returns token and we can use the username fro form or decode token.
-            // The backend authService.login returns { access_token }.
-
-            // Let's create a partial user object or decode token later.
-            // Wait, `login` in AuthService (Backend) just returns access_token.
-            // I should probably fetch user details or just store what I have.
-            // The Store expects a User object.
-
-            const fakeUser = {
-                id: 0, // Need from token payload
-                username: formData.username,
-                first_name: 'User',
-                last_name: ''
+            const response = await authService.signin({username: formData.username.trim(), password: formData.password.trim()});
+            const decodedToken:any= jwtDecode(response.access_token);
+            const user = {
+                id: decodedToken?.sub, 
+                username: decodedToken?.username,
+                first_name: decodedToken?.first_name,
+                last_name: decodedToken?.last_name
             };
-
-            // Ideally we should have a /auth/me or similar, or return user in login response.
-            // Since I can't easily change backend right now without more round trips, 
-            // I'll proceed with minimal user data + token.
-
-            setAuth(fakeUser, response.access_token);
-
+            setAuth(user, response.access_token);
             toast.success("Successfully logged in!");
             onLoginSuccess();
             onClose();
-
         } catch (error: any) {
             toast.error("Invalid credentials");
         }
@@ -127,7 +107,7 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
                     <div className="flex justify-end">
                         <Link
                             to="/forgot-password"
-                            className="text-xs text-primary-content hover:text-accent font-medium transition-colors"
+                            className="text-xs text-primary-content hover:text-accent font-medium transition-colors hover:underline"
                             onClick={onClose}
                         >
                             Forgot Password?
@@ -136,7 +116,7 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
 
                     <button
                         type="submit"
-                        className="w-full py-3 bg-gradient-to-r from-primary-content to-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-gradient-to-r from-primary-content to-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                         <FaSignInAlt /> Sign In
                     </button>
@@ -146,7 +126,7 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
                     <span className="text-slate-500 text-sm">Don't have an account? </span>
                     <Link
                         to="/signup"
-                        className="text-primary-content font-bold hover:text-accent transition-colors text-sm"
+                        className="text-primary-content font-bold hover:text-accent transition-colors text-sm hover:underline"
                         onClick={onClose}
                     >
                         Sign Up

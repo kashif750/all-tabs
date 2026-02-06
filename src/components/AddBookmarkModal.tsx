@@ -4,9 +4,9 @@ import { FaTimes, FaGlobe, FaLock, FaUser } from "react-icons/fa";
 interface AddBookmarkModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (data: any, categoryId: string) => void;
-    categories: { id: string; name: string }[];
-    initialCategoryId: string;
+    onSave: (data: any, categoryId: number) => void;
+    categories: { value: number; name: string }[];
+    initialCategoryId: number;
     initialData?: any; // For editing
 }
 
@@ -21,7 +21,6 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
 
     const isEditMode = !!initialData;
 
-    // Reset form when modal opens or initialData changes
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
@@ -31,12 +30,8 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
                     username: initialData.username || "",
                     password: initialData.password || "",
                 });
-                // If editing, we might want to set category to item's current location? 
-                // The parent passes initialCategoryId which should probably be the item's category or current view.
-                // If item has _categoryId, we could use that if passed. But let's rely on parent passing correct initialCategoryId.
                 setSelectedCategoryId(initialCategoryId);
             } else {
-                // Add Mode
                 setFormData({ label: "", url: "", username: "", password: "" });
                 setSelectedCategoryId(initialCategoryId);
             }
@@ -46,7 +41,7 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData, selectedCategoryId);
-        onClose();
+        // onClose();
     };
 
     if (!isOpen) return null;
@@ -56,30 +51,25 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
             <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 relative animate-in fade-in zoom-in duration-200">
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
                     <FaTimes size={20} />
                 </button>
 
                 <h2 className="text-2xl font-bold mb-6 text-slate-800">
-                    {isEditMode ? "Edit Portal" : "Add New Portal"}
+                    {isEditMode ? "Edit Bookmark" : "Add New Bookmark"}
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-
-                    {/* Category Select - Disable in Edit Mode? Or allow moving? 
-              User request didn't specify. Moving via edit is nice. 
-              Let's allow it.
-          */}
                     <div className="space-y-1">
                         <label className="text-sm font-semibold text-slate-600 ml-1">Category</label>
                         <select
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-slate-700 appearance-none cursor-pointer"
                             value={selectedCategoryId}
-                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                            onChange={(e) => setSelectedCategoryId(parseInt(e.target.value))}
                         >
                             {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                <option key={cat.value} value={cat.value}>{cat.name}</option>
                             ))}
                         </select>
                     </div>
@@ -95,6 +85,7 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
                                 placeholder="e.g. Workflow Portal"
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-slate-400"
                                 value={formData.label}
+                                maxLength={50}
                                 onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                             />
                         </div>
@@ -103,13 +94,10 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
                     <div className="space-y-1">
                         <label className="text-sm font-semibold text-slate-600 ml-1">URL</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-3.5 text-slate-400 font-mono text-xs">
-                                https://
-                            </span>
                             <input
-                                type="text"
-                                placeholder="example.com"
-                                className="w-full pl-16 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-slate-400"
+                                type="url"
+                                placeholder="e.g. https://example.com"
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-slate-400"
                                 value={formData.url}
                                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                             />
@@ -128,6 +116,7 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
                                     placeholder="Optional"
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-slate-400 text-sm"
                                     value={formData.username}
+                                    maxLength={100}
                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 />
                             </div>
@@ -143,6 +132,7 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
                                     placeholder="Optional"
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-slate-400 text-sm"
                                     value={formData.password}
+                                    maxLength={100}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
                             </div>
@@ -151,7 +141,7 @@ const AddBookmarkModal = ({ isOpen, onClose, onSave, categories, initialCategory
 
                     <button
                         type="submit"
-                        className="w-full py-3 bg-gradient-to-r from-primary-content to-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all mt-6"
+                        className="w-full py-3 bg-gradient-to-r from-primary-content to-accent text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all mt-6 cursor-pointer"
                     >
                         {isEditMode ? "Save Changes" : "Add Portal"}
                     </button>

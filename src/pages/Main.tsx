@@ -1,56 +1,39 @@
-import { useState, useEffect } from "react";
-import { FaPlus, FaSearch, FaBars, FaUser } from "react-icons/fa";
-import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    DragEndEvent
-} from '@dnd-kit/core';
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    rectSortingStrategy,
-    useSortable
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { FaBars, FaPlus, FaUser } from "react-icons/fa";
 
-import BookmarkCard from "../components/BookmarkCard";
 import AddBookmarkModal from "../components/AddBookmarkModal";
-import Sidebar from "../components/Sidebar";
+import BookmarkCard from "../components/BookmarkCard";
 import ConfirmModal from "../components/ConfirmModal";
-import SignInModal from "../components/SignInModal";
 import ProfileModal from "../components/ProfileModal";
+import Sidebar from "../components/Sidebar";
+import SignInModal from "../components/SignInModal";
 
-import { useAuthStore } from "../store/useAuthStore";
 import { dataService } from "../services/data.service";
+import { useAuthStore } from "../store/useAuthStore";
 
 // --- Sortable Wrapper ---
-const SortableBookmarkItem = (props: any) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-    } = useSortable({ id: props.id });
+// const SortableBookmarkItem = (props: any) => {
+//     const {
+//         attributes,
+//         listeners,
+//         setNodeRef,
+//         transform,
+//         transition,
+//     } = useSortable({ id: props.id });
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        touchAction: 'none'
-    };
+//     const style = {
+//         transform: CSS.Transform.toString(transform),
+//         transition,
+//         touchAction: 'none'
+//     };
 
-    return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="h-full">
-            <BookmarkCard {...props} />
-        </div>
-    );
-};
+//     return (
+//         <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="h-full">
+//             <BookmarkCard {...props} />
+//         </div>
+//     );
+// };
 
 
 const Main = () => {
@@ -61,7 +44,7 @@ const Main = () => {
     const [categories, setCategories] = useState<any[]>([]);
     // const [bookmarks, setBookmarks] = useState<any>({}); // Store raw API bookmarks
     const [data, setData]=useState<any>({});
-    const [selectedBookmarks, setSelectedBookmarks]=useState<any[]>([]);
+    // const [selectedBookmarks, setSelectedBookmarks]=useState<any[]>([]);
 
     // Helper to build hierarchy locally for views
     // const buildCategoryTree = (cats: any[], bks: any[]) => {
@@ -104,7 +87,7 @@ const Main = () => {
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     // const [isLoggedIn, setIsLoggedIn] = useState(false); // REPLACED by Store
-    const [searchQuery, setSearchQuery] = useState("");
+    // const [searchQuery, setSearchQuery] = useState("");
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [bookmarkToDelete, setBookmarkToDelete] = useState<number>(0);
     const [categoryToDelete, setCategoryToDelete] = useState<number>(0);
@@ -120,16 +103,16 @@ const Main = () => {
     */
 
     // DnD Sensors
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8, // Require movement before drag starts
-            },
-        }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
+    // const sensors = useSensors(
+    //     useSensor(PointerSensor, {
+    //         activationConstraint: {
+    //             distance: 8, // Require movement before drag starts
+    //         },
+    //     }),
+    //     useSensor(KeyboardSensor, {
+    //         coordinateGetter: sortableKeyboardCoordinates,
+    //     })
+    // );
 
 
     // ---- COMPUTED VIEWS ----
@@ -183,30 +166,30 @@ const Main = () => {
 
     // ---- ACTIONS ----
 
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
+    // const handleDragEnd = (event: DragEndEvent) => {
+    //     const { active, over } = event;
 
-        // if (isDashboardView || searchQuery) return;
+    //     // if (isDashboardView || searchQuery) return;
 
-        // if (active.id !== over?.id) {
-        //     setCategories((prev) => {
-        //         return prev.map(cat => {
-        //             if (cat.id === selectedCategoryId) {
-        //                 const oldIndex = cat.bookmarks.findIndex((b: any) => b.id === active.id);
-        //                 const newIndex = cat.bookmarks.findIndex((b: any) => b.id === over?.id);
+    //     // if (active.id !== over?.id) {
+    //     //     setCategories((prev) => {
+    //     //         return prev.map(cat => {
+    //     //             if (cat.id === selectedCategoryId) {
+    //     //                 const oldIndex = cat.bookmarks.findIndex((b: any) => b.id === active.id);
+    //     //                 const newIndex = cat.bookmarks.findIndex((b: any) => b.id === over?.id);
 
-        //                 if (oldIndex !== -1 && newIndex !== -1) {
-        //                     return {
-        //                         ...cat,
-        //                         bookmarks: arrayMove(cat.bookmarks, oldIndex, newIndex)
-        //                     };
-        //                 }
-        //             }
-        //             return cat;
-        //         });
-        //     });
-        // }
-    };
+    //     //                 if (oldIndex !== -1 && newIndex !== -1) {
+    //     //                     return {
+    //     //                         ...cat,
+    //     //                         bookmarks: arrayMove(cat.bookmarks, oldIndex, newIndex)
+    //     //                     };
+    //     //                 }
+    //     //             }
+    //     //             return cat;
+    //     //         });
+    //     //     });
+    //     // }
+    // };
 
     const handleEditBookmark = (data: any) => {
         setEditingBookmark(data);

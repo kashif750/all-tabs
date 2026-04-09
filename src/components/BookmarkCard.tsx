@@ -1,6 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { FaCopy, FaEye, FaEyeSlash, FaGlobe, FaTrash, FaStar, FaRegStar, FaPen } from "react-icons/fa";
+import { FaCopy, FaEye, FaEyeSlash, FaGlobe, FaPen, FaTrash } from "react-icons/fa";
 import { Link } from "react-router";
 
 interface BookmarkCardProps {

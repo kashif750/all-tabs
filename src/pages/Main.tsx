@@ -1,195 +1,33 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaBars, FaPlus, FaUser } from "react-icons/fa";
-
 import AddBookmarkModal from "../components/AddBookmarkModal";
 import BookmarkCard from "../components/BookmarkCard";
 import ConfirmModal from "../components/ConfirmModal";
 import ProfileModal from "../components/ProfileModal";
 import Sidebar from "../components/Sidebar";
 import SignInModal from "../components/SignInModal";
-
 import { dataService } from "../services/data.service";
 import { useAuthStore } from "../store/useAuthStore";
 
-// --- Sortable Wrapper ---
-// const SortableBookmarkItem = (props: any) => {
-//     const {
-//         attributes,
-//         listeners,
-//         setNodeRef,
-//         transform,
-//         transition,
-//     } = useSortable({ id: props.id });
-
-//     const style = {
-//         transform: CSS.Transform.toString(transform),
-//         transition,
-//         touchAction: 'none'
-//     };
-
-//     return (
-//         <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="h-full">
-//             <BookmarkCard {...props} />
-//         </div>
-//     );
-// };
-
-
 const Main = () => {
+    console.log("------------- Main ---------------------");
     const { token, user: authUser, logout } = useAuthStore();
     const isLoggedIn = !!token;
+    console.log("isLoggedIn:: ", isLoggedIn);
 
-    // ---- STATE ----
     const [categories, setCategories] = useState<any[]>([]);
-    // const [bookmarks, setBookmarks] = useState<any>({}); // Store raw API bookmarks
     const [data, setData]=useState<any>({});
-    // const [selectedBookmarks, setSelectedBookmarks]=useState<any[]>([]);
-
-    // Helper to build hierarchy locally for views
-    // const buildCategoryTree = (cats: any[], bks: any[]) => {
-    //     // Map backend categories to frontend structure
-    //     // { id, name, bookmarks: [] }
-    //     // Backend Category: { id, category_name }
-    //     // Backend Bookmark: { id, label, url, category: { id } }
-
-    //     const mappedCats = cats.map(c => ({
-    //         id: c.id.toString(),
-    //         name: c.category_name,
-    //         bookmarks: bks.filter(b => b.category?.id === c.id || b.category_id === c.id).map(b => ({
-    //             ...b,
-    //             id: b.id.toString(),
-    //             isStarred: b.isHighlighted, // Map isHighlighted -> isStarred
-    //             url: b.url || '', // Safety
-    //         }))
-    //     }));
-
-    //     // Add Dashboard concept
-    //     // Dashboard is a virtual view, not a category in DB usually, but frontend treats it as one
-    //     // Or we can just have 'Dashboard' as id='dashboard'.
-
-    //     // Ensure Dashboard exists in list? 
-    //     // Frontend logic expects 'dashboard' in categories list for Sidebar?
-    //     // Yes, logic at line 89 checks format.
-
-    //     const dashboardCat = {
-    //         id: 'dashboard',
-    //         name: 'Dashboard',
-    //         bookmarks: [] // Populated by logic later in render
-    //     };
-
-    //     return [dashboardCat, ...mappedCats];
-    // };
-
 
     const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
     const [isBookmarkModalOpened, setIsBookmarkModalOpened] = useState(false);
     const [isSignInOpen, setIsSignInOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    // const [isLoggedIn, setIsLoggedIn] = useState(false); // REPLACED by Store
-    // const [searchQuery, setSearchQuery] = useState("");
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [bookmarkToDelete, setBookmarkToDelete] = useState<number>(0);
     const [categoryToDelete, setCategoryToDelete] = useState<number>(0);
     const [editingBookmark, setEditingBookmark] = useState<any | null>(null);
     console.log("editingBookmark:: ", editingBookmark);
-
-    // Sync to local storage -> DISABLED or Modified to only sync if guest?
-    // For now disabling legacy Sync
-    /*
-    useEffect(() => {
-        localStorage.setItem('portal_data', JSON.stringify(categories));
-    }, [categories]);
-    */
-
-    // DnD Sensors
-    // const sensors = useSensors(
-    //     useSensor(PointerSensor, {
-    //         activationConstraint: {
-    //             distance: 8, // Require movement before drag starts
-    //         },
-    //     }),
-    //     useSensor(KeyboardSensor, {
-    //         coordinateGetter: sortableKeyboardCoordinates,
-    //     })
-    // );
-
-
-    // ---- COMPUTED VIEWS ----
-
-    // let activeCategoryTitle = "";
-    // let activeCategoryBookmarks: any[] = [];
-    // let isDashboardView = selectedCategoryId === 'dashboard';
-
-    // if (isDashboardView) {
-    //     activeCategoryTitle = "Dashboard";
-    //     const dashboardCat = categories.find(c => c.id === 'dashboard');
-    //     const dashboardItems = dashboardCat ? dashboardCat.bookmarks.map((b: any) => ({ ...b, _categoryId: 'dashboard' })) : [];
-
-    //     const otherCats = categories.filter(c => c.id !== 'dashboard');
-    //     const starredItems = otherCats.flatMap(cat =>
-    //         cat.bookmarks.filter((b: any) => b.isStarred).map((b: any) => ({ ...b, _categoryId: cat.id }))
-    //     );
-
-    //     activeCategoryBookmarks = [...dashboardItems, ...starredItems];
-
-    // } else {
-    //     const cat = categories.find(c => c.id === selectedCategoryId);
-    //     if (cat) {
-    //         activeCategoryTitle = cat.name;
-    //         activeCategoryBookmarks = cat.bookmarks.map((b: any) => ({ ...b, _categoryId: cat.id }));
-    //     } else if (categories.length > 0) {
-    //         setSelectedCategoryId('dashboard');
-    //     }
-    // }
-
-    // Filter by search
-    // let displayedBookmarks = activeCategoryBookmarks.filter((item: any) =>
-    //     item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    //     item.url.toLowerCase().includes(searchQuery.toLowerCase())
-    // );
-
-    // SORTING: 
-    // In Dashboard: Auto-sort (Starred first, A-Z)
-    // In Categories: MANUAL ORDER (DnD, so no auto-sort)
-
-    // if (isDashboardView) {
-    //     displayedBookmarks.sort((a: any, b: any) => {
-    //         const aImportant = a.isStarred || a._categoryId === 'dashboard';
-    //         const bImportant = b.isStarred || b._categoryId === 'dashboard';
-    //         if (aImportant !== bImportant) {
-    //             return aImportant ? -1 : 1;
-    //         }
-    //         return a.label.localeCompare(b.label);
-    //     });
-    // }
-
-    // ---- ACTIONS ----
-
-    // const handleDragEnd = (event: DragEndEvent) => {
-    //     const { active, over } = event;
-
-    //     // if (isDashboardView || searchQuery) return;
-
-    //     // if (active.id !== over?.id) {
-    //     //     setCategories((prev) => {
-    //     //         return prev.map(cat => {
-    //     //             if (cat.id === selectedCategoryId) {
-    //     //                 const oldIndex = cat.bookmarks.findIndex((b: any) => b.id === active.id);
-    //     //                 const newIndex = cat.bookmarks.findIndex((b: any) => b.id === over?.id);
-
-    //     //                 if (oldIndex !== -1 && newIndex !== -1) {
-    //     //                     return {
-    //     //                         ...cat,
-    //     //                         bookmarks: arrayMove(cat.bookmarks, oldIndex, newIndex)
-    //     //                     };
-    //     //                 }
-    //     //             }
-    //     //             return cat;
-    //     //         });
-    //     //     });
-    //     // }
-    // };
 
     const handleEditBookmark = (data: any) => {
         setEditingBookmark(data);
@@ -200,23 +38,6 @@ const Main = () => {
         setEditingBookmark(null); // Clear edit mode
         setIsBookmarkModalOpened(true);
     }
-
-    // const handleToggleStar = async (bookmarkId: string) => {
-    //     // Find current state
-    //     let currentStatus = false;
-    //     categories.forEach(c => {
-    //         const b = c.bookmarks.find((bk: any) => bk.id === bookmarkId);
-    //         if (b) currentStatus = b.isStarred;
-    //     });
-
-    //     try {
-    //         await dataService.updateBookmark(parseInt(bookmarkId), { isHighlighted: !currentStatus });
-    //         // Optimistic update or fetch? fetch for now easiest
-    //         fetchData();
-    //     } catch (e) {
-    //         toast.error("Failed to update");
-    //     }
-    // };
 
     const handleDeleteRequest = (id: number) => {
         setBookmarkToDelete(id);
@@ -232,27 +53,16 @@ const Main = () => {
                 value: newCat.id,
             }
             setCategories((prev)=>([...prev, _newCategory]));
-            // await fetchData();
-            // setSelectedCategoryId(newCat.id.toString());
         } catch (e) {
             toast.error("Failed to create category");
         }
     };
 
     const handleDeleteCategory = async (id: number) => {
-        // if (id === 'dashboard') return;
-
-        // if (categories.filter(c => c.id !== 'dashboard').length <= 1) {
-        //     // alert("You must have at least one user category.");
-        //     // Actually let's allow deleting even if last, or keep restricted.
-        // }
-
         try {
             await dataService.deleteCategory(id);
             toast.success("Category deleted");
             setCategories((prev)=>prev?.filter((itm)=>itm.value!==id));
-            // await fetchData();
-            // if (selectedCategoryId === id) setSelectedCategoryId('dashboard');
         } catch (e) {
             toast.error("Failed to delete category");
         }
@@ -271,7 +81,6 @@ const Main = () => {
         try {
             const response = await dataService.getData();
             console.log("getUserBookmarks:: ", response);
-            // setCategories(response || []);
             setData(response || {});
         } catch (e) {
             toast.error("Failed to get CategoryDropdowns");
@@ -289,7 +98,6 @@ const Main = () => {
                 url: data.url,
                 username: data.username || null,
                 password: data.password || null,
-                // isHighlighted: false,
                 category_id: targetCategoryId
             };
             if(editingBookmark){
@@ -308,60 +116,17 @@ const Main = () => {
     };
     
     const confirmDeleteAction = async () => {
-        if (!bookmarkToDelete) return;
-
-        // const ownerCat = categories.find(c => c.bookmarks.some((b: any) => b.id === bookmarkToDelete));
-        // if (!ownerCat) {
-        //     setBookmarkToDelete(0);
-        //     return;
-        // }
-
-        // if (ownerCat.id === 'dashboard') {
-        //     // Dashboard delete logic is purely frontend view usually, but here 
-        //     // the user might mean "unstar" if it's there via Star.
-        //     // If it's a DIRECT dashboard bookmark (not implemented in backend yet, assume all have categories),
-        //     // then it's just removing from view?
-
-        //     // Backend architecture: Bookmarks MUST belong to a Category. 
-        //     // So "Deleting from Dashboard" usually means "Unstar" if it's there because of star.
-        //     // Or if we have a "Dashboard" category in DB.
-
-        //     // For now, simpler logic: If it's starred, unstar.
-        //     await handleToggleStar(bookmarkToDelete);
-
-        // } else {
-        //     // Permanently delete
-            try {
-                await dataService.deleteBookmark(bookmarkToDelete);
-                toast.success("Bookmark deleted");
-                getUserBookmarks();
-                // fetchData();
-            } catch (e) {
-                toast.error("Failed to delete");
-            }
-        // }
-        // setBookmarkToDelete(0);
+        if (!bookmarkToDelete){
+            return;
+        }
+        try {
+            await dataService.deleteBookmark(bookmarkToDelete);
+            toast.success("Bookmark deleted");
+            getUserBookmarks();
+        } catch (e) {
+            toast.error("Failed to delete");
+        }
     };
-
-    // const sidebarCategories = categories.filter(c => c.id !== 'dashboard');
-    // const modalCategories = categories.filter(c => c.id !== 'dashboard'); // Hide Dashboard from add modal
-
-    // DnD is enabled only if NOT dashboard and NO search query
-    // NOTE: Backend doesn't support reordering yet.
-    // So DnD will visually work but not persist order to backend unless we add 'order' field.
-    // Disabling DnD for now or just keeping it local-only (useless on refresh).
-    // const isDndEnabled = false; // !isDashboardView && !searchQuery;
-
-    // Calculate initial category for Modal
-    // let modalInitialCategory = selectedCategoryId;
-    // if (editingBookmark) {
-    //     const found = categories.find(c => c.bookmarks.some((b: any) => b.id === editingBookmark.id));
-    //     if (found) modalInitialCategory = found.id;
-    // } else if (selectedCategoryId === 'dashboard') {
-    //     // If Adding new in Dashboard, default to first category?
-    //     // or let modal handle it.
-    //     if (modalCategories.length > 0) modalInitialCategory = modalCategories[0].id;
-    // }
     
     useEffect(() => {
         if(isLoggedIn){
@@ -371,7 +136,6 @@ const Main = () => {
     }, [isLoggedIn]);
     return (
         <div className="flex h-screen bg-secondary font-sans overflow-hidden relative">
-            {/* Mobile Sidebar Overlay Backdrop */}
             {isSidebarOpen && (
                 <div
                     className="absolute inset-0 bg-black/50 z-20 md:hidden backdrop-blur-sm"
@@ -379,7 +143,6 @@ const Main = () => {
                 />
             )}
 
-            {/* Sidebar */}
             <div className={`
                 absolute md:static inset-y-0 left-0 z-30 
                 transform transition-transform duration-300 ease-in-out
@@ -391,11 +154,11 @@ const Main = () => {
                     selectedCategoryId={selectedCategoryId}
                     onSelectCategory={(id:number) => {
                         setSelectedCategoryId(id);
-                        if (window.innerWidth < 768) setIsSidebarOpen(false); // Close on selection on mobile
+                        if (window.innerWidth < 768) setIsSidebarOpen(false);
                     }}
                     onAddCategory={handleAddCategory}
                     onDeleteCategory={(id) => setCategoryToDelete(id)}
-                    // onDeleteCategory={(id) => handleDeleteCategory(id)}
+                    isLoggedIn={isLoggedIn}
                 />
             </div>
 
@@ -405,25 +168,9 @@ const Main = () => {
                         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-slate-500">
                             <FaBars />
                         </button>
-                        {/* <div>
-                            <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">{activeCategoryTitle}</h1>
-                            <p className="text-xs text-slate-400">
-                                {activeCategoryBookmarks.length || 0} bookmarks
-                            </p>
-                        </div> */}
                     </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto">
-                        {/* <div className="relative group w-full md:w-64">
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-content transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div> */}
 
                         {isLoggedIn ? (
                             <button
@@ -445,7 +192,8 @@ const Main = () => {
                         <button
                             onClick={handleAddClick}
                             title={"Add New Bookmark"}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary-content text-white rounded-full hover:bg-sky-700 shadow-md hover:shadow-lg active:scale-95 transition-all text-sm font-medium whitespace-nowrap cursor-pointer"
+                            disabled={!isLoggedIn}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary-content text-white rounded-full hover:bg-sky-700 shadow-md hover:shadow-lg active:scale-95 transition-all text-sm font-medium whitespace-nowrap cursor-pointer disabled:cursor-not-allowed disabled:active:scale-100"
                         >
                             <FaPlus size={12} /> Add New BookMark
                         </button>
@@ -454,49 +202,27 @@ const Main = () => {
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <div className="max-w-7xl mx-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-1.5 md:gap-2.5 pb-20">
+                            {data?.[selectedCategoryId]?.map((item: any) => (
+                                <BookmarkCard
+                                    key={item.id}
+                                    {...item}
+                                    onDelete={() => handleDeleteRequest(item.id)}
+                                    onEdit={handleEditBookmark}
+                                />
+                            ))}
 
-                        {/* <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
-                        >
-                            <SortableContext
-                                items={displayedBookmarks.map((b: any) => b.id)}
-                                strategy={rectSortingStrategy}
-                                disabled={!isDndEnabled}
-                            > */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-1.5 md:gap-2.5 pb-20">
-                                    {/* {displayedBookmarks.map((item: any) => (
-                                        <SortableBookmarkItem
-                                            key={item.id}
-                                            {...item}
-                                            onDelete={() => handleDeleteRequest(item.id)}
-                                            onToggleStar={handleToggleStar}
-                                            onEdit={handleEditBookmark}
-                                        />
-                                    ))} */}
-                                    {data?.[selectedCategoryId]?.map((item: any) => (
-                                        <BookmarkCard
-                                            key={item.id}
-                                            {...item}
-                                            onDelete={() => handleDeleteRequest(item.id)}
-                                            // onToggleStar={handleToggleStar}
-                                            onEdit={handleEditBookmark}
-                                        />
-                                    ))}
-
-                                    <button
-                                        onClick={handleAddClick}
-                                        className="group flex gap-2 py-2 items-center justify-center bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary transition-all cursor-pointer"
-                                    >
-                                        <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-primary-content group-hover:shadow-md transition-all">
-                                            <FaPlus size={16} />
-                                        </div>
-                                        <span className="text-sm text-slate-500 group-hover:text-primary-content font-medium">Add Bookmark</span>
-                                    </button>
+                            <button
+                                onClick={handleAddClick}
+                                disabled={!isLoggedIn}
+                                className="group flex gap-2 py-2 items-center justify-center bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary transition-all cursor-pointer disabled:cursor-not-allowed"
+                            >
+                                <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-primary-content group-hover:shadow-md transition-all">
+                                    <FaPlus size={16} />
                                 </div>
-                            {/* </SortableContext>
-                        </DndContext> */}
+                                <span className="text-sm text-slate-500 group-hover:text-primary-content font-medium">Add Bookmark</span>
+                            </button>
+                        </div>
 
                         {(data?.[selectedCategoryId] || []).length === 0 && (
                             <div className="text-center py-20">
@@ -546,10 +272,6 @@ const Main = () => {
                 isOpen={isSignInOpen}
                 onClose={() => setIsSignInOpen(false)}
                 onLoginSuccess={() => {
-                    // setIsLoggedIn(true); // Handled by Store now
-                    // Just force fetch
-                    // fetch will run because token changed (useEffect dependency needs to be updated or reload)
-                    // useEffect depends on isLoggedIn = !!token. So it will run.
                     setIsSignInOpen(false);
                 }}
             />

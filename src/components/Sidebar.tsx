@@ -7,16 +7,16 @@ interface Category {
     value: number;
     name: string;
 }
-
 interface SidebarProps {
     categories: Category[];
     selectedCategoryId: number;
     onSelectCategory: (id: number) => void;
     onAddCategory: (name: string) => void;
     onDeleteCategory: (id: number) => void;
+    isLoggedIn: boolean;
 }
 
-const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCategory, onDeleteCategory }: SidebarProps) => {
+const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCategory, onDeleteCategory, isLoggedIn }: SidebarProps) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState("");
     const categoriesLength = categories?.length || 0;
@@ -114,7 +114,8 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                 ) : (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-slate-300 rounded-lg text-slate-500 hover:text-slate-800 hover:border-slate-800 hover:bg-primary transition-all text-sm font-medium hover:cursor-pointer"
+                        disabled={!isLoggedIn}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-slate-300 rounded-lg text-slate-500 hover:text-slate-800 hover:border-slate-800 hover:bg-primary transition-all text-sm font-medium hover:cursor-pointer disabled:cursor-not-allowed"
                     >
                         <FaPlus size={12} /> New Category
                     </button>

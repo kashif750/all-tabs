@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import logo from "../assets/logo.svg";
-import toast from "react-hot-toast";
-
 interface Category {
     value: number;
     name: string;
@@ -19,19 +17,31 @@ interface SidebarProps {
 const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCategory, onDeleteCategory, isLoggedIn }: SidebarProps) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState("");
+    const [categoryError, setCategoryError]=useState('');
+    const validate=(category="")=>{
+        category=category?.trim();
+        if(!category){
+            return "Category is required";
+        }if(category?.length<2){
+            return "Minimum 2 characters required";
+        }else if(category?.length>100){
+            return "Maximum 100 characers allowed";
+        }else{
+            return "";
+        }
+    }
     const categoriesLength = categories?.length || 0;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // debugger;
-        if (newCategoryName.trim()) {
-            onAddCategory(newCategoryName?.trim());
-            setNewCategoryName("");
-            setIsAdding(false);
-        }else{
-            // console.log("else ------------")
-            toast.error('Category Name is required');
+        const _error = validate(newCategoryName?.trim());
+        if(_error){
+            setCategoryError(_error);
+            return;
         }
+        onAddCategory(newCategoryName?.trim());
+        setNewCategoryName("");
+        setIsAdding(false);
     };
 
     return (
@@ -43,20 +53,6 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 space-y-1">
-                {/* Dashboard Static Item */}
-                {/* <div
-                    className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all mb-4 ${selectedCategoryId === 'dashboard'
-                        ? "bg-primary text-primary-content shadow-sm"
-                        : "text-slate-600 hover:bg-slate-50"
-                        }`}
-                    onClick={() => onSelectCategory('dashboard')}
-                >
-                    <div className="flex items-center gap-3 truncate">
-                        <FaThLarge size={14} className={selectedCategoryId === 'dashboard' ? 'opacity-100' : 'opacity-70'} />
-                        <span className="font-medium truncate">Dashboard</span>
-                    </div>
-                </div> */}
-
                 <div className="px-3 pb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Categories
                 </div>
@@ -71,9 +67,6 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                         onClick={() => onSelectCategory(category.value)}
                     >
                         <div className="flex items-center gap-3 truncate">
-                            {/* <span className={`text-sm ${selectedCategoryId === category.value ? "opacity-100" : "opacity-50"}`}>
-                                {category.bookmarks.length}
-                            </span> */}
                             <span className="font-medium truncate">{category.name}</span>
                         </div>
 
@@ -102,13 +95,25 @@ const Sidebar = ({ categories, selectedCategoryId, onSelectCategory, onAddCatego
                             placeholder="Category Name"
                             className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-primary"
                             value={newCategoryName}
-                            maxLength={50}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                            // onBlur={() => !newCategoryName && setIsAdding(false)}
+                            maxLength={100}
+                            onChange={(e) => {
+                                const _value = e.target.value;
+                                setNewCategoryName(_value);
+                                setCategoryError(validate(_value));
+                            }}
                         />
+                        {categoryError && <p className="text-red-500 text-xs -mt-1 font-semibold">{categoryError}</p>}
                         <div className="flex gap-2">
-                            <button type="submit" className="flex-1 bg-primary text-primary-content text-xs py-1.5 rounded font-medium hover:cursor-pointer hover:text-primary-content/80">Add</button>
-                            <button type="button" onClick={() => setIsAdding(false)} className="flex-1 bg-slate-100 text-slate-500 text-xs py-1.5 rounded font-medium hover:text-slate-800 hover:cursor-pointer">Cancel</button>
+                            <button 
+                                type="submit" 
+                                disabled={Boolean(categoryError)} 
+                                className="flex-1 bg-primary text-primary-content text-xs py-1.5 rounded font-medium hover:cursor-pointer hover:text-primary-content/80 disabled:cursor-not-allowed"
+                            >Add</button>
+                            <button 
+                                type="button" 
+                                onClick={() => {setIsAdding(false); setCategoryError(''); setNewCategoryName('');}} 
+                                className="flex-1 bg-slate-100 text-slate-500 text-xs py-1.5 rounded font-medium hover:text-slate-800 hover:cursor-pointer"
+                            >Cancel</button>
                         </div>
                     </form>
                 ) : (

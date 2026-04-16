@@ -191,8 +191,8 @@ const Main = () => {
 
                         <button
                             onClick={handleAddClick}
-                            title={"Add New Bookmark"}
-                            disabled={!isLoggedIn}
+                            disabled={!isLoggedIn || categories?.length===0}
+                            title={categories?.length===0 ? "Create Category First": "Add New Bookmark"}
                             className="flex items-center gap-2 px-4 py-2 bg-primary-content text-white rounded-full hover:bg-sky-700 shadow-md hover:shadow-lg active:scale-95 transition-all text-sm font-medium whitespace-nowrap cursor-pointer disabled:cursor-not-allowed disabled:active:scale-100"
                         >
                             <FaPlus size={12} /> Add New BookMark
@@ -214,7 +214,8 @@ const Main = () => {
 
                             <button
                                 onClick={handleAddClick}
-                                disabled={!isLoggedIn}
+                                disabled={!isLoggedIn || categories?.length===0}
+                                title={categories?.length===0 ? "Create Category First": ""}
                                 className="group flex gap-2 py-2 items-center justify-center bg-white/40 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary transition-all cursor-pointer disabled:cursor-not-allowed"
                             >
                                 <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center text-slate-400 group-hover:text-primary-content group-hover:shadow-md transition-all">

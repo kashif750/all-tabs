@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FaTimes, FaUser, FaLock, FaSignInAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link } from "react-router";
 import toast from "react-hot-toast";
-import {jwtDecode} from 'jwt-decode';
+import {jwtDecode, JwtPayload} from 'jwt-decode';
 
 interface SignInModalProps {
     isOpen: boolean;
@@ -11,29 +11,88 @@ interface SignInModalProps {
 }
 
 import { authService } from "../services/auth.service";
-import { useAuthStore } from "../store/useAuthStore";
+import { useAuthStore, UserType } from "../store/useAuthStore";
+import { isAxiosError } from "axios";
 
+type FormDataTypes={
+    username: string;
+    password: string;
+}
+type FormDataErrorTypes={
+    [Key in keyof FormDataTypes]?:string;
+}
+type FormDataTouchedTypes={
+    [Key in keyof FormDataTypes]?:boolean;
+}
+interface TokenTypes extends JwtPayload{
+    username: string;
+    first_name: string;
+    last_name: string;
+}
 const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
-    const [formData, setFormData] = useState({
+    // console.log("--------------- SignInModal ----------------");
+    const [formData, setFormData] = useState<FormDataTypes>({
         username: "",
         password: "",
     });
+    const [formDataErrors, setFormDataErrors] = useState<FormDataErrorTypes>({
+        username: "",
+        password: "",
+    });
+    const [formDataTouched, setFormDataTouched] = useState<FormDataTouchedTypes>({
+        username: false,
+        password: false,
+    });
+    // console.log("formData :: ", formData);
+    // console.log("formDataErrors :: ", formDataErrors);
+    // console.log("formDataTouched :: ", formDataTouched);
+
+    const validate = (key: keyof FormDataTypes, value: string)=>{
+        value = value?.trim();
+        if(key==="username"){
+            if(!value){
+                return "Username is required";
+            }else{
+                return "";
+            }
+        }else if(key==="password"){
+            if(!value){
+                return "Password is required";
+            }else{
+                return "";
+            }
+        }
+    }
     const [showPassword, setShowPassword] = useState(false);
     const setAuth = useAuthStore((state) => state.setAuth);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!formData.username.trim() || !formData.password.trim()) {
-            toast.error("Please enter username and password");
+        // if (!formData.username.trim() || !formData.password.trim()) {
+        //     toast.error("Please enter username and password");
+        //     return;
+        // }
+        let _errors:FormDataErrorTypes = {};
+        let _touched:FormDataTouchedTypes = {};
+        for(const [key,value] of Object.entries(formData)){
+            const _error = validate(key as keyof FormDataTypes,value);
+            _errors={..._errors, [key]: _error};
+            _touched={..._touched, [key]: true};
+        }
+        // console.log("handleSubmit:: _errors:: ", _errors);
+        // console.log("handleSubmit:: _touched:: ", _touched);
+        if(Object.values(_errors).filter((itm)=>itm).length>0){
+            setFormDataErrors(_errors);
+            setFormDataTouched(_touched);
             return;
         }
 
         try {
             const response = await authService.signin({username: formData.username.trim(), password: formData.password.trim()});
-            const decodedToken:any= jwtDecode(response.access_token);
-            const user = {
-                id: decodedToken?.sub, 
+            const decodedToken= jwtDecode<TokenTypes>(response.access_token);
+            // console.log("decodedToken:: ", decodedToken);
+            const user:UserType = {
+                id: parseInt(decodedToken?.sub || "0"), 
                 username: decodedToken?.username,
                 first_name: decodedToken?.first_name,
                 last_name: decodedToken?.last_name
@@ -42,8 +101,12 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
             toast.success("Successfully logged in!");
             onLoginSuccess();
             onClose();
-        } catch (error: any) {
-            toast.error("Invalid credentials");
+        } catch (error) {
+            if(isAxiosError(error)){
+                toast.error(error?.response?.data?.message || error?.message);
+            }else{
+                toast.error("Invalid credentials");
+            }
         }
     };
 
@@ -76,8 +139,17 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
                                 placeholder="Enter your username"
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-slate-400 text-sm"
                                 value={formData.username}
-                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                id="username"
+                                onChange={(e) => {
+                                    const _value = e.target.value;
+                                    const _key = e.target.id;
+                                    setFormData({ ...formData, [_key]: _value });
+                                    const _error = validate(_value as keyof FormDataTypes, _key);
+                                    setFormDataErrors((prev)=>({...prev, [_key]: _error}));
+                                    setFormDataTouched((prev)=>({...prev, [_key]: true}));
+                                }}
                             />
+                            {(formDataTouched?.username && formDataErrors?.username) && <p className="text-xs font-semibold text-red-500">{formDataErrors.username}</p>}
                         </div>
                     </div>
 
@@ -92,8 +164,17 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
                                 placeholder="Enter your password"
                                 className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-slate-400 text-sm"
                                 value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                id="password"
+                                onChange={(e) => {
+                                    const _value = e.target.value;
+                                    const _key = e.target.id;
+                                    setFormData({ ...formData, [_key]: _value });
+                                    const _error = validate(_value as keyof FormDataTypes, _key);
+                                    setFormDataErrors((prev)=>({...prev, [_key]: _error}));
+                                    setFormDataTouched((prev)=>({...prev, [_key]: true}));
+                                }}
                             />
+                            {(formDataTouched?.password && formDataErrors?.password) && <p className="text-xs font-semibold text-red-500">{formDataErrors.password}</p>}
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
@@ -104,7 +185,7 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    {/* <div className="flex justify-end">
                         <Link
                             to="/forgot-password"
                             className="text-xs text-primary-content hover:text-accent font-medium transition-colors hover:underline"
@@ -112,7 +193,7 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
                         >
                             Forgot Password?
                         </Link>
-                    </div>
+                    </div> */}
 
                     <button
                         type="submit"

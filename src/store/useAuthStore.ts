@@ -1,21 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface User {
+export interface UserType {
     id: number;
     username: string;
     first_name: string;
     last_name: string;
 }
 
-interface AuthState {
-    user: User | null;
+interface AuthStateType {
+    user: UserType | null;
     token: string | null;
-    setAuth: (user: User, token: string) => void;
+    setAuth: (user: UserType, token: string) => void;
     logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
+export const useAuthStore = create<AuthStateType>()(
     persist(
         (set) => ({
             user: null,

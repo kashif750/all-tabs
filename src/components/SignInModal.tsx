@@ -117,7 +117,7 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
             <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 relative animate-in fade-in zoom-in duration-200">
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
                     <FaTimes size={18} />
                 </button>
@@ -178,7 +178,7 @@ const SignInModal = ({ isOpen, onClose, onLoginSuccess }: SignInModalProps) => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                             >
                                 {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
                             </button>
